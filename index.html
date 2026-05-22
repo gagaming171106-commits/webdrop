@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebDrop — Upload &amp; Share via GitHub Pages</title>
+  <meta name="description" content="Upload file HTML, tự động host lên GitHub Pages và tạo mã QR để chia sẻ nhanh chóng. Dành cho giáo viên và học sinh." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="bg-particles" aria-hidden="true">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <img src="logo.png" alt="WebDrop Logo" class="logo-img" />
+        <span class="logo-text">Web<span class="logo-accent">Drop</span></span>
+      </div>
+      <div class="header-actions">
+        <div class="header-badge">
+          <span class="badge-dot"></span>
+          Powered by GitHub Pages
+        </div>
+        <button class="btn-icon" id="btn-settings" aria-label="Cài đặt hệ thống (GitHub Token)" title="Cài đặt (GitHub Token)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="container">
+
+      <!-- Hero -->
+      <section class="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title" class="hero-title">
+          Upload file HTML, nhận <span class="gradient-text">link và mã QR</span> trong vài giây
+        </h1>
+      </section>
+
+        <!-- Unified Action Card -->
+        <section class="action-card" id="main-action" aria-labelledby="action-title">
+          <div class="action-header">
+            <h2 id="action-title" class="action-title">Chuẩn bị File HTML</h2>
+            <p class="action-desc">Kéo thả một hoặc nhiều file — mỗi file sẽ nhận 1 mã QR riêng.</p>
+          </div>
+          
+          <div
+            class="drop-zone"
+            id="drop-zone"
+            role="button"
+            tabindex="0"
+            aria-label="Khu vực kéo thả file HTML. Hỗ trợ nhiều file cùng lúc"
+            aria-describedby="file-list"
+          >
+            <div class="drop-zone-inner">
+              <div class="drop-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <p class="drop-title">Kéo file <code>.html</code> vào đây</p>
+              <p class="drop-subtitle">Hỗ trợ nhiều file cùng lúc</p>
+              <button class="btn-outline" id="btn-browse" type="button" aria-label="Chọn file HTML từ máy tính">
+                Chọn file
+              </button>
+            </div>
+            <input type="file" id="file-input" accept=".html,.htm" hidden aria-hidden="true" multiple />
+          </div>
+          <div class="file-list" id="file-list" hidden></div>
+
+          <button class="btn-deploy" id="btn-deploy" disabled aria-label="Deploy file HTML lên GitHub Pages và tạo mã QR" aria-busy="false">
+            <span class="btn-deploy-content">
+              <svg class="deploy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="M12 5l7 7-7 7"></path>
+              </svg>
+              Tạo Website &amp; QR Code
+            </span>
+            <span class="btn-deploy-loading" hidden aria-hidden="true">
+              <span class="spinner"></span>
+              Đang upload...
+            </span>
+          </button>
+          
+          <div class="progress-container" id="progress-container" hidden aria-hidden="true">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+            <p class="progress-label" id="progress-label">Đang chuẩn bị...</p>
+            <p class="progress-sublabel" id="progress-sublabel"></p>
+          </div>
+        </section>
+
+        <!-- Results Section: QR grid (one card per file) -->
+        <section class="results-section" id="step-result" hidden
+                 aria-labelledby="step3-title" aria-live="polite">
+
+          <!-- Header: success + download all -->
+          <div class="results-header">
+            <div class="results-header-left">
+              <div class="step-number success" aria-hidden="true">✓</div>
+              <div>
+                <h2 id="step3-title" class="step-title">Hoàn thành! 🎉</h2>
+                <p class="step-desc" id="results-summary"></p>
+              </div>
+            </div>
+            <button class="btn-outline" id="btn-download-all"
+                    aria-label="Tải tất cả mã QR về máy">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 12V3M10 12l-3-3M10 12l3-3M3 17h14"
+                      stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Tải tất cả QR
+            </button>
+          </div>
+
+          <!-- QR cards grid -->
+          <div class="results-grid" id="results-grid"
+               role="list" aria-label="Danh sách mã QR"></div>
+
+
+        </section>
+
+
+      <!-- History -->
+      <section class="history-section" id="history-section" aria-labelledby="history-title">
+        <div class="history-header">
+          <h2 id="history-title" class="history-title">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 2v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Lịch sử deploy
+          </h2>
+          <button class="btn-text" id="btn-clear-history" aria-label="Xoá toàn bộ lịch sử deploy">Xoá tất cả</button>
+        </div>
+        <div class="history-list" id="history-list" role="list" aria-label="Danh sách các file đã deploy">
+          <div class="history-empty" id="history-empty">
+            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2" opacity="0.3"/><path d="M16 24h16M24 16v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/></svg>
+            <p>Chưa có file nào được deploy</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Powered by <strong>GitHub Pages</strong> • Dữ liệu lưu trên trình duyệt • Không thu thập thông tin cá nhân</p>
+  </footer>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal" hidden>
+    <div class="modal-container" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Cài đặt GitHub</h2>
+        <button class="btn-close" id="btn-close-settings" aria-label="Đóng cài đặt">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="step-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <p class="step-desc" style="margin:0;">Nhập Token để tự động tạo repo &amp; deploy.</p>
+          <div class="step-status" id="token-status-badge"></div>
+        </div>
+        <div class="token-input-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2C7.24 2 5 4.24 5 7v1H3v10h14V8h-2V7c0-2.76-2.24-5-5-5zm0 2c1.66 0 3 1.34 3 3v1H7V7c0-1.66 1.34-3 3-3zm0 8a2 2 0 110 4 2 2 0 010-4z" fill="currentColor"/>
+            </svg>
+            <input
+              type="password"
+              id="github-token-input"
+              class="token-input"
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="GitHub Personal Access Token"
+            />
+            <button class="btn-toggle-pass" id="toggle-token-visibility" aria-label="Hiện/ẩn token" title="Hiện/ẩn token">
+              <svg id="eye-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 4C5.58 4 2 10 2 10s3.58 6 8 6 8-6 8-6-3.58-6-8-6zm0 10a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+          <button class="btn-primary" id="btn-save-token" aria-label="Xác thực và lưu token" style="width: 100%;">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" fill="currentColor"/></svg>
+            Xác thực Token
+          </button>
+        </div>
+        <a class="token-help-link" style="margin-top: 16px; display: inline-flex;"
+           href="https://github.com/settings/tokens/new?description=HTMLtoQR&scopes=repo"
+           target="_blank" rel="noopener noreferrer"
+           aria-label="Tạo GitHub token (mở tab mới)">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4H9V6h2v4z" fill="currentColor"/></svg>
+          Lấy token (settings/tokens) → Chọn "Generate new token (classic)" → Tích chọn "repo"
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
