@@ -1,0 +1,1187 @@
+
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <title>PEMFC Data Insights Report</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    html { background: #ffffff; }
+    body {
+      margin: 0;
+      color: #182536;
+      font-family: "Times New Roman", Cambria, Georgia, serif;
+      font-size: 10.2pt;
+      line-height: 1.34;
+      counter-reset: fig table;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 17mm 18mm 18mm;
+      background: white;
+      break-after: page;
+      page-break-after: always;
+      position: relative;
+    }
+    .page:last-child { break-after: auto; page-break-after: auto; }
+    @media screen {
+      html { background: #e8ebef; }
+      .page { margin: 10mm auto; box-shadow: 0 10px 30px rgba(18, 31, 45, 0.18); }
+    }
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22mm 22mm 22mm;
+      background:
+        linear-gradient(90deg, rgba(11, 61, 97, 0.94), rgba(11, 61, 97, 0.74)),
+        linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%);
+      color: white;
+    }
+    .cover h1 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 30pt;
+      line-height: 1.05;
+      margin: 0 0 8mm;
+      letter-spacing: 0;
+    }
+    .cover .subtitle { font-size: 15pt; max-width: 155mm; line-height: 1.25; color: #e7eef5; }
+    .cover .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5mm;
+      margin-top: 16mm;
+    }
+    .cover .meta-card {
+      border: 1px solid rgba(255,255,255,0.34);
+      padding: 5mm;
+      min-height: 29mm;
+      background: rgba(255,255,255,0.08);
+    }
+    .meta-card strong { display: block; font-family: Arial, Helvetica, sans-serif; font-size: 16pt; margin-bottom: 2mm; }
+    .meta-card span { font-size: 8.8pt; color: #e8eef4; }
+    .running-head {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 7.2pt;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #667588;
+      border-bottom: 1px solid #c9d2dc;
+      padding-bottom: 2.6mm;
+      margin-bottom: 7mm;
+    }
+    h2 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 18pt;
+      color: #0b3d61;
+      margin: 0 0 5mm;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    h3 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11.2pt;
+      color: #0b3d61;
+      margin: 5mm 0 2mm;
+      line-height: 1.2;
+    }
+    p { margin: 0 0 3.2mm; text-align: justify; }
+    .lead { font-size: 11pt; line-height: 1.38; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; align-items: start; }
+    .col-60-40 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8mm; align-items: start; }
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 5mm 0 5mm; }
+    .kpi {
+      border-top: 2px solid #0b3d61;
+      background: #f5f8fb;
+      padding: 4mm;
+      min-height: 23mm;
+    }
+    .kpi b { display: block; font-family: Arial, Helvetica, sans-serif; color: #0b3d61; font-size: 15pt; margin-bottom: 1mm; }
+    .kpi span { font-size: 8.2pt; color: #4e5e70; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.2pt;
+      margin: 2mm 0 4mm;
+      break-inside: avoid;
+    }
+    th {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 7.5pt;
+      color: white;
+      background: #0b3d61;
+      padding: 2.1mm 2mm;
+      text-align: left;
+      border: 1px solid #0b3d61;
+    }
+    td {
+      padding: 1.75mm 2mm;
+      border: 1px solid #d7e0e8;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) td { background: #f7f9fb; }
+    .compact td { padding: 1.35mm 1.6mm; font-size: 7.6pt; }
+    .mono { font-family: Consolas, "Courier New", monospace; font-size: 7.6pt; }
+    .note {
+      border-left: 3px solid #b87922;
+      padding: 2.5mm 3.5mm;
+      background: #fbf6ed;
+      font-size: 9.3pt;
+      margin: 3mm 0;
+    }
+    ul { margin: 1.5mm 0 3.5mm 4.8mm; padding: 0; }
+    li { margin: 1.3mm 0; }
+    figure { margin: 2mm 0 5mm; break-inside: avoid; }
+    figcaption {
+      counter-increment: fig;
+      font-size: 8.4pt;
+      color: #3d4b5c;
+      margin-top: 1.6mm;
+      line-height: 1.3;
+      text-align: left;
+    }
+    figcaption::before { content: "Figure " counter(fig) ". "; font-weight: 700; color: #0b3d61; }
+    .table-caption {
+      counter-increment: table;
+      font-size: 8.4pt;
+      margin: 1mm 0 1.8mm;
+      color: #3d4b5c;
+    }
+    .table-caption::before { content: "Table " counter(table) ". "; font-weight: 700; color: #0b3d61; }
+    .chart-svg { width: 100%; height: auto; display: block; }
+    .axis { stroke: #34495e; stroke-width: 1; }
+    .grid { stroke: #d8e1ea; stroke-width: 1; }
+    .tick { font-family: Arial, Helvetica, sans-serif; font-size: 10px; fill: #384b5f; }
+    .axis-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; fill: #26384a; font-weight: 700; }
+    .legend { font-family: Arial, Helvetica, sans-serif; font-size: 11px; fill: #26384a; }
+    .small-value { font-family: Arial, Helvetica, sans-serif; font-size: 9px; fill: #26384a; }
+    .hm-value { font-family: Arial, Helvetica, sans-serif; font-size: 8px; font-weight: 700; }
+    .equation {
+      font-family: "Cambria Math", "Times New Roman", serif;
+      text-align: center;
+      font-size: 11pt;
+      padding: 2mm;
+      margin: 3mm 0;
+      background: #f7f9fb;
+      border: 1px solid #d7e0e8;
+    }
+    .references li { margin-bottom: 2mm; }
+  </style>
+</head>
+<body>
+  <section class="page cover">
+    <div>
+      <div style="font-family:Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.12em;font-size:9pt;margin-bottom:12mm;color:#cfe0ee;">
+        Academic data description and electrochemical analysis
+      </div>
+      <h1>PEMFC Data Insights Report</h1>
+      <div class="subtitle">
+        Báo cáo mô tả dữ liệu học thuật cho bộ “Long-term Dynamic Durability Test Dataset for Single Proton Exchange Membrane Fuel Cell”
+      </div>
+      <div style="margin-top:10mm;max-width:160mm;font-size:10.8pt;line-height:1.48;color:#f2f7fb;">
+        Tài liệu này mô tả cấu trúc dữ liệu, chất lượng đo, tín hiệu suy giảm điện hóa, đường cong phân cực,
+        và mức độ sẵn sàng cho mô hình physics-informed AI/RUL. Nội dung được tổ chức theo phong cách
+        academic report với bảng mô tả dữ liệu, figure caption, phương pháp xử lý và giới hạn suy luận.
+      </div>
+      <div class="meta-grid">
+        <div class="meta-card"><strong>3.629.680</strong><span>Mẫu thời gian durability</span></div>
+        <div class="meta-card"><strong>20</strong><span>Segment CSV, từ 50 h đến 1000 h</span></div>
+        <div class="meta-card"><strong>-25,4 µV/h</strong><span>Slope suy giảm điện áp dưới tải động</span></div>
+        <div class="meta-card"><strong>24,9%</strong><span>Mất Pmax từ polarization curve 0 h đến 1000 h</span></div>
+      </div>
+    </div>
+    <div style="font-size:9pt;color:#d8e7f3;">
+      Generated on 01:34:46 21/5/2026 · Dataset folder: <span style="font-family:Consolas,monospace;">Dataset_for_Single_Proton</span>
+    </div>
+  </section>
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>Abstract & Key Findings</h2>
+      
+    <p class="lead">
+      Bộ dữ liệu khảo sát độ bền động của một single proton exchange membrane fuel cell (PEMFC)
+      thông qua hai lớp dữ liệu bổ sung cho nhau: chuỗi thời gian vận hành dài hạn và các đường cong
+      phân cực V-I đo tại nhiều mốc aging. Đây là dữ liệu đa biến, không dừng, chịu ảnh hưởng mạnh bởi
+      current command; vì vậy mọi mô tả suy giảm phải chuẩn hóa theo trạng thái tải hoặc current-bin.
+    </p>
+    <div class="kpi-row">
+      <div class="kpi"><b>-26,8 mV</b><span>Điện áp tải động median giảm từ 50 h đến 1000 h.</span></div>
+      <div class="kpi"><b>-51,3 µV/h</b><span>Slope tại bin dòng cao nhất (~35,5 A), thể hiện stress lớn ở vùng tải cao.</span></div>
+      <div class="kpi"><b>22,93 W</b><span>Pmax sau nghỉ 12 h tại 1000 h, cao hơn phép đo không nghỉ cùng mốc.</span></div>
+    </div>
+    <h3>Diễn giải chính</h3>
+    <ul>
+      <li>OCV giảm chậm hơn điện áp dưới tải, cho thấy suy giảm biểu hiện mạnh hơn khi dòng tăng và các tổn thất ohmic/mass-transport trở nên chi phối.</li>
+      <li>Đường cong phân cực cho thấy suy giảm đa cơ chế: giảm OCV, tăng activation drop, tăng ohmic proxy và suy giảm Pmax.</li>
+      <li>Hiệu ứng phục hồi sau 12 h nghỉ là dấu hiệu quan trọng của thành phần suy giảm thuận nghịch, nhiều khả năng liên quan hydration/water management.</li>
+      <li>Dữ liệu phù hợp cho AI/RUL nếu được window hóa theo thời gian và split theo mốc aging để tránh data leakage.</li>
+    </ul>
+    <div class="equation">V(t,I,u) = E<sub>rev</sub>(t,u) − η<sub>act</sub>(t,I) − I·R<sub>ohm</sub>(t,u) − η<sub>mt</sub>(t,I,u) + ε</div>
+    <p>
+      Biểu thức trên là khung mô tả thực nghiệm dùng trong báo cáo: dữ liệu không chỉ là bảng cảm biến,
+      mà là phép quan sát tổng hợp của phản ứng điện hóa, truyền proton/electron, quản lý nước và vận chuyển khối.
+    </p>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>Official Source and Evidence Audit</h2>
+      
+    <p class="lead">
+      Báo cáo này đã được audit lại theo tiêu đề chính thức: <em>Long-term Dynamic Durability Test Dataset for Single Proton Exchange Membrane Fuel Cell</em>. Theo trang Mendeley Data do bạn cung cấp, dataset ở trạng thái draft/preview, Version 1, contributor Jian Zuo, reserved DOI <span class="mono">10.17632/w65jjt8v5w.1</span>; bài Data in Brief liên quan có DOI <span class="mono">10.1016/j.dib.2021.106775</span>.
+    </p>
+    <div class="two-col">
+      <div>
+        <div class="table-caption">Nguồn và thông tin thí nghiệm đã đối chiếu.</div>
+        
+    <table class="compact">
+      <thead><tr><th>Mục kiểm chứng</th><th>Kết luận audit</th></tr></thead>
+      <tbody>
+        <tr><td>Official dataset title</td><td>Long-term Dynamic Durability Test Dataset for Single Proton Exchange Membrane Fuel Cell</td></tr><tr><td>Repository citation</td><td>Mendeley Data, V1, reserved DOI 10.17632/w65jjt8v5w.1</td></tr><tr><td>Contributor / institution</td><td>Jian Zuo; Tongji University, Shanghai, China</td></tr><tr><td>Test station</td><td>Greenlight 20 / G20 test station; raw data recorded by G20/Emerald software</td></tr><tr><td>Experiment</td><td>Long-term dynamic durability test and periodic polarization characterization of one single PEMFC</td></tr><tr><td>Protocol scale</td><td>3076 FC-DLC cycles, approximately 1008 h; durability files sampled at 1 Hz</td></tr><tr><td>Related article</td><td>Data in Brief DOI 10.1016/j.dib.2021.106775; Applied Energy DOI 10.1016/j.apenergy.2020.115937</td></tr>
+      </tbody>
+    </table>
+  
+      </div>
+      <div>
+        <h3>Điểm đã sửa để chính xác hơn</h3>
+        <ul>
+          <li><strong>Provenance:</strong> thêm title, contributor, Tongji University, G20 test station và reserved DOI của Mendeley.</li>
+          <li><strong>Schema:</strong> ý nghĩa 17 cột durability được đối chiếu với bảng mô tả trong Data in Brief và unit row trong CSV local.</li>
+          <li><strong>Polarization:</strong> nhấn mạnh <span class="mono">current_set</span> là giá trị đặt, <span class="mono">current</span> là dòng thực tế; hai file phân biệt đo ngay sau dynamic cycle và đo sau 12 h shutdown rest.</li>
+          <li><strong>Current density:</strong> active area không nằm trong CSV, nhưng literature sử dụng dataset này báo active surface area 25 cm². Vì vậy report chỉ dùng A làm tín hiệu gốc, còn A/cm² được đánh dấu là derived-with-provenance.</li>
+        </ul>
+        <div class="note">
+          Audit này phân tách rõ ba mức bằng chứng: trực tiếp từ CSV, từ bài Data in Brief/Mendeley, và từ literature sử dụng dataset. Những đại lượng suy ra không được trình bày như raw measurement.
+        </div>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>1. Academic Dataset Description</h2>
+      
+    <div class="two-col">
+      <div>
+        <h3>Bản chất dữ liệu</h3>
+        <p>
+          Thư mục <span class="mono">Durability_test_dataset</span> gồm các segment CSV theo mốc tuổi danh nghĩa
+          từ 50 h đến 1000 h. Mỗi file chứa elapsed time nội bộ, current, voltage, power và
+          các điều kiện vận hành. Thư mục <span class="mono">Polarization_curves_dataset</span> chứa các đường cong
+          V-I dạng bảng ghép block, mỗi block tương ứng một mốc aging.
+        </p>
+        <p>
+          Về phương pháp luận, mốc giờ trong tên file không phải timestamp tuyệt đối từng dòng mà là nhãn aging
+          của segment. Do đó báo cáo dùng <em>aging_hour_label</em> như biến thứ tự lifecycle và dùng elapsed time
+          trong file để mô tả profile tải động.
+        </p>
+        <h3>Giới hạn học thuật cần nêu rõ</h3>
+        <ul>
+          <li>Current density A/cm² không nằm trong CSV; có thể suy ra bằng active area 25 cm² nếu chấp nhận provenance từ literature liên quan đến dataset.</li>
+          <li>Stoichiometry chưa thể suy ra chắc chắn nếu thiếu composition, áp suất tuyệt đối và định nghĩa điều kiện chuẩn của NLPM.</li>
+          <li>Dewpoint là proxy cho humidification, không phải water content trực tiếp trong màng.</li>
+          <li>Các tham số activation/ohmic/mass transport trong báo cáo là empirical descriptors, không phải fit cơ chế đầy đủ.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="table-caption">Tóm tắt định lượng của dataset.</div>
+        
+    <table class="compact">
+      <thead><tr><th>Thuộc tính</th><th>Giá trị</th></tr></thead>
+      <tbody>
+        <tr><td>Đối tượng</td><td>Single-cell PEMFC durability experiment</td></tr><tr><td>Durability files</td><td>20 CSV segment</td></tr><tr><td>Aging labels</td><td>50 h → 1000 h</td></tr><tr><td>Total rows</td><td>3.629.680</td></tr><tr><td>Median sampling</td><td>1,000 s (~1 Hz)</td></tr><tr><td>Median segment length</td><td>49,82 h</td></tr><tr><td>Polarization points</td><td>779 V-I records</td></tr><tr><td>Primary response</td><td>Voltage (V), power (W), Pmax</td></tr>
+      </tbody>
+    </table>
+  
+        <div class="note">
+          Scientific interpretation in this report is deliberately conservative: it separates direct measurements
+          from inferred descriptors, and it marks current density as a derived quantity rather than a raw G20 signal.
+        </div>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>2. Schema Profiling and Variable Ontology</h2>
+      
+    <p>
+      Mỗi durability CSV có ba dòng đầu mang thông tin header/units/labels trước phần dữ liệu số. Sau khi loại metadata,
+      phần đo có 17 biến cảm biến liên tục. Các đơn vị suy ra từ file đầu tiên: time = s,
+      current = A, voltage = V, pressure = kPag,
+      temperature/dewpoint = °C, flow = NLPM.
+    </p>
+    <div class="table-caption">Variable dictionary và vai trò khoa học của từng nhóm biến.</div>
+    
+    <table class="compact">
+      <thead><tr><th>Cột</th><th>Đơn vị</th><th>Vai trò trong phân tích</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">time</span><br/>Thời gian</td><td>s</td><td>Elapsed time nội bộ của từng segment CSV; không phải thời gian tuyệt đối của toàn thí nghiệm.</td></tr><tr><td><span class="mono">current</span><br/>Dòng điện</td><td>A</td><td>Dòng điện cell, là biến kích thích/tải động chính. Giá trị âm nhỏ được xem là offset quanh 0 A.</td></tr><tr><td><span class="mono">voltage</span><br/>Điện áp</td><td>V</td><td>Điện áp single-cell, biến đáp ứng chính dùng để đánh giá suy giảm và performance loss.</td></tr><tr><td><span class="mono">power</span><br/>Công suất</td><td>W</td><td>Công suất điện tức thời; thường gần bằng current × voltage.</td></tr><tr><td><span class="mono">pressure_anode_inlet</span><br/>Áp suất anode vào</td><td>kPag</td><td>Áp suất gauge tại inlet anode, phản ánh điều kiện cấp hydrogen.</td></tr><tr><td><span class="mono">pressure_anode_outlet</span><br/>Áp suất anode ra</td><td>kPag</td><td>Áp suất gauge tại outlet anode, hữu ích cho chênh áp và water-management proxy.</td></tr><tr><td><span class="mono">pressure_cathode_inlet</span><br/>Áp suất cathode vào</td><td>kPag</td><td>Áp suất gauge tại inlet cathode, liên quan cung cấp oxy/không khí.</td></tr><tr><td><span class="mono">pressure_cathode_outlet</span><br/>Áp suất cathode ra</td><td>kPag</td><td>Áp suất gauge tại outlet cathode, liên quan chênh áp cathode và transport.</td></tr><tr><td><span class="mono">temp_anode_endplate</span><br/>Nhiệt độ endplate anode</td><td>°C</td><td>Nhiệt độ endplate phía anode, đại diện trạng thái nhiệt của cell fixture.</td></tr><tr><td><span class="mono">temp_anode_dewpoint_water</span><br/>Điểm sương anode</td><td>°C</td><td>Điểm sương anode, proxy cho humidification và hydration.</td></tr><tr><td><span class="mono">temp_anode_inlet</span><br/>Nhiệt độ anode vào</td><td>°C</td><td>Nhiệt độ inlet anode.</td></tr><tr><td><span class="mono">temp_anode_outlet</span><br/>Nhiệt độ anode ra</td><td>°C</td><td>Nhiệt độ outlet anode.</td></tr><tr><td><span class="mono">temp_cathode_dewpoint_water</span><br/>Điểm sương cathode</td><td>°C</td><td>Điểm sương cathode, proxy cho điều kiện ẩm ở cathode.</td></tr><tr><td><span class="mono">temp_cathode_inlet</span><br/>Nhiệt độ cathode vào</td><td>°C</td><td>Nhiệt độ inlet cathode.</td></tr><tr><td><span class="mono">temp_cathode_outlet</span><br/>Nhiệt độ cathode ra</td><td>°C</td><td>Nhiệt độ outlet cathode.</td></tr><tr><td><span class="mono">total_anode_stack_flow</span><br/>Tổng lưu lượng anode</td><td>NLPM</td><td>Tổng lưu lượng khí anode ở điều kiện normal liter per minute.</td></tr><tr><td><span class="mono">total_cathode_stack_flow</span><br/>Tổng lưu lượng cathode</td><td>NLPM</td><td>Tổng lưu lượng khí cathode; đồng biến mạnh với current command trong profile tải.</td></tr>
+      </tbody>
+    </table>
+  
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>2.1 Derived Current Density and Polarization Schema</h2>
+      
+    <div class="two-col">
+      <div>
+        <h3>Current density derived from active area</h3>
+        <p>
+          Cột durability gốc ghi <span class="mono">current</span> bằng A. Nếu sử dụng active surface area 25 cm² được báo trong literature liên quan đến dataset, có thể chuyển đổi sang current density bằng <span class="mono">j = I / 25</span>. Đây là feature suy ra, không phải cột raw do G20 ghi trực tiếp.
+        </p>
+        <div class="table-caption">Mapping giữa current-bin trong report và current density suy ra.</div>
+        
+    <table class="compact">
+      <thead><tr><th>Current bin</th><th>Derived j</th></tr></thead>
+      <tbody>
+        <tr><td>0 A</td><td>0,000 A/cm²</td></tr><tr><td>1,8 A</td><td>0,072 A/cm²</td></tr><tr><td>4,4 A</td><td>0,176 A/cm²</td></tr><tr><td>9,5 A</td><td>0,380 A/cm²</td></tr><tr><td>10,4 A</td><td>0,416 A/cm²</td></tr><tr><td>14,8 A</td><td>0,592 A/cm²</td></tr><tr><td>20,7 A</td><td>0,828 A/cm²</td></tr><tr><td>29,6 A</td><td>1,184 A/cm²</td></tr><tr><td>35,5 A</td><td>1,420 A/cm²</td></tr>
+      </tbody>
+    </table>
+  
+      </div>
+      <div>
+        <h3>Polarization files</h3>
+        <p>
+          Hai file polarization là bảng ghép block theo aging time. <span class="mono">Polarization_curves.csv</span> chứa phép đo ngay sau dynamic load cycle; <span class="mono">Polarization_curves_after_12h_rest.csv</span> chứa phép đo sau 12 h shutdown rest. Mỗi block có bốn biến:
+        </p>
+        
+    <table class="compact">
+      <thead><tr><th>Cột trong block</th><th>Ý nghĩa</th></tr></thead>
+      <tbody>
+        <tr><td>current</td><td>Dòng thực tế được áp lên cell trong phép characterization (A).</td></tr><tr><td>current_set</td><td>Giá trị dòng đặt theo chương trình test station (A).</td></tr><tr><td>voltage</td><td>Điện áp cell đo được tại bước dòng tương ứng (V).</td></tr><tr><td>power</td><td>Công suất điện tại bước dòng tương ứng (W).</td></tr>
+      </tbody>
+    </table>
+  
+        <div class="note">Các file polarization chứa cả nhánh tăng/giảm dòng trong chu trình characterization; các descriptor trong report là mô tả thực nghiệm từ các V-I records hợp lệ, không phải model fit cơ chế đầy đủ.</div>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>3. File Inventory and Sampling Frequency</h2>
+      
+    <p>
+      Bảng dưới đây là inventory đầy đủ của 20 segment durability. Sampling interval median là 1,000 s
+      gần như nhất quán trên toàn bộ tập, cho thấy đây là chuỗi thời gian gần 1 Hz. Segment cuối tại
+      1000 h dài hơn các segment khác, vì vậy khi tính thống kê theo lifecycle cần dùng median/aggregation
+      theo file hoặc weighting rõ ràng.
+    </p>
+    <div class="table-caption">Inventory đầy đủ các file durability và chỉ số sampling.</div>
+    
+    <table class="compact">
+      <thead><tr><th>File</th><th>Rows</th><th>Duration (h)</th><th>Median Δt (s)</th><th>Median V tải</th><th>Median OCV</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono">50_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7705</td><td>0,9404</td></tr><tr><td><span class="mono">100_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7631</td><td>0,9333</td></tr><tr><td><span class="mono">150_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7576</td><td>0,9323</td></tr><tr><td><span class="mono">200_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7411</td><td>0,9294</td></tr><tr><td><span class="mono">250_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7505</td><td>0,9284</td></tr><tr><td><span class="mono">300_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7453</td><td>0,9268</td></tr><tr><td><span class="mono">350_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7501</td><td>0,9294</td></tr><tr><td><span class="mono">400_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7404</td><td>0,9268</td></tr><tr><td><span class="mono">450_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7362</td><td>0,9242</td></tr><tr><td><span class="mono">500_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7333</td><td>0,9249</td></tr><tr><td><span class="mono">550_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7350</td><td>0,9268</td></tr><tr><td><span class="mono">600_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7324</td><td>0,9246</td></tr><tr><td><span class="mono">650_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7308</td><td>0,9239</td></tr><tr><td><span class="mono">700_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7275</td><td>0,9207</td></tr><tr><td><span class="mono">750_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7269</td><td>0,9197</td></tr><tr><td><span class="mono">800_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7346</td><td>0,9210</td></tr><tr><td><span class="mono">850_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7401</td><td>0,9220</td></tr><tr><td><span class="mono">900_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7398</td><td>0,9204</td></tr><tr><td><span class="mono">950_h.csv</span></td><td>179.360</td><td>49,82</td><td>1,000</td><td>0,7427</td><td>0,9230</td></tr><tr><td><span class="mono">1000_h.csv</span></td><td>221.840</td><td>61,62</td><td>1,000</td><td>0,7437</td><td>0,9220</td></tr>
+      </tbody>
+    </table>
+  
+    <div class="note">
+      Median voltage trong bảng này không phải performance tại một load duy nhất; đó là mô tả robust của
+      cả profile tải trong segment. Các kết luận suy giảm chính trong báo cáo tiếp tục được chuẩn hóa theo
+      current-bin để giảm bias do profile tải động.
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>4. Data Quality and Preprocessing Protocol</h2>
+      
+    <div class="col-60-40">
+      <div>
+        <h3>Quality audit</h3>
+        
+    <table class="compact">
+      <thead><tr><th>Tiêu chí</th><th>Số lượng</th><th>Diễn giải</th></tr></thead>
+      <tbody>
+        <tr><td>Missing/NaN trong 17 biến chính</td><td>0</td><td>Không có thiếu dữ liệu thực sự trong các cột cảm biến chính.</td></tr><tr><td>Infinite values</td><td>0</td><td>Không phát hiện giá trị vô hạn.</td></tr><tr><td>Voltage < 0.2 V</td><td>1</td><td>Một điểm bất thường nghiêm trọng ở mốc 200 h được loại khỏi thống kê robust.</td></tr><tr><td>Voltage < 0 V</td><td>1</td><td>Không phù hợp vật lý; đánh dấu invalid.</td></tr><tr><td>Current âm nhỏ</td><td>1.858</td><td>Xem là offset cảm biến quanh 0 A khi trị tuyệt đối rất nhỏ.</td></tr><tr><td>Sụt áp >50 mV không kèm đổi dòng</td><td>15</td><td>Được giữ làm anomaly flag cho predictive maintenance.</td></tr>
+      </tbody>
+    </table>
+  
+        <h3>Cleaning rules applied</h3>
+        <ul>
+          <li>Header/unit metadata được tách khỏi dữ liệu số; tên cột gốc được giữ nguyên để traceability.</li>
+          <li>Current âm rất nhỏ quanh 0 A được xử lý như sensor offset khi binning OCV.</li>
+          <li>Voltage ngoài miền vật lý 0.2-1.1 V được gắn cờ invalid và không đưa vào median degradation.</li>
+          <li>Sudden drops được giữ lại như anomaly events, không xóa khỏi raw data.</li>
+          <li>Tất cả chỉ số suy giảm chính dùng median thay vì mean để giảm ảnh hưởng spike.</li>
+        </ul>
+      </div>
+      <div>
+        <figure><svg viewBox="0 0 620 360" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="308" class="grid"/><line x1="169.6" y1="28" x2="169.6" y2="308" class="grid"/><line x1="275.2" y1="28" x2="275.2" y2="308" class="grid"/><line x1="380.8" y1="28" x2="380.8" y2="308" class="grid"/><line x1="486.4" y1="28" x2="486.4" y2="308" class="grid"/><line x1="592.0" y1="28" x2="592.0" y2="308" class="grid"/><line x1="64" y1="308.0" x2="592" y2="308.0" class="grid"/><line x1="64" y1="238.0" x2="592" y2="238.0" class="grid"/><line x1="64" y1="168.0" x2="592" y2="168.0" class="grid"/><line x1="64" y1="98.0" x2="592" y2="98.0" class="grid"/><line x1="64" y1="28.0" x2="592" y2="28.0" class="grid"/>
+    <line x1="64" y1="308" x2="592" y2="308" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="308" class="axis"/>
+    <text x="64.0" y="332" class="tick" text-anchor="middle">0</text><text x="169.6" y="332" class="tick" text-anchor="middle">3</text><text x="275.2" y="332" class="tick" text-anchor="middle">6</text><text x="380.8" y="332" class="tick" text-anchor="middle">10</text><text x="486.4" y="332" class="tick" text-anchor="middle">13</text><text x="592.0" y="332" class="tick" text-anchor="middle">16</text>
+    <text x="54" y="312.0" class="tick" text-anchor="end">0</text><text x="54" y="242.0" class="tick" text-anchor="end">10</text><text x="54" y="172.0" class="tick" text-anchor="end">19</text><text x="54" y="102.0" class="tick" text-anchor="end">29</text><text x="54" y="32.0" class="tick" text-anchor="end">38</text>
+    <text x="328" y="350" class="axis-label" text-anchor="middle">Elapsed time trong segment (h)</text>
+    <text x="18" y="168" class="axis-label" text-anchor="middle" transform="rotate(-90 18 168)">Current (A)</text>
+  <path d="M 65.29 295.03 L 66.57 238.11 L 67.86 295.01 L 69.14 231.54 L 70.42 295.03 L 71.71 295.03 L 72.99 198.84 L 74.27 46.17 L 75.56 238.11 L 76.84 275.36 L 78.12 231.56 L 79.41 295.01 L 80.69 295.01 L 81.97 295.03 L 83.26 198.84 L 84.54 155.43 L 85.82 275.34 L 87.11 198.84 L 88.39 295.03 L 89.67 295.03 L 90.96 295.03 L 92.24 295.03 L 93.52 155.47 L 94.81 155.45 L 96.09 46.17 L 97.37 295.03 L 98.66 295.03 L 99.94 231.54 L 101.22 295.03 L 102.51 238.09 L 103.79 295.03 L 105.07 198.84 L 106.36 89.99 L 107.64 295.01 L 108.92 231.54 L 110.21 295.03 L 111.49 238.11 L 112.77 295.03 L 114.06 198.81 L 115.34 155.43 L 116.62 155.43 L 117.91 46.19 L 119.19 295.03 L 120.47 238.11 L 121.76 295.03 L 123.04 198.84 L 124.32 238.11 L 125.61 295.01 L 126.89 198.81 L 128.17 89.97 L 129.46 295.01 L 130.74 295.03 L 132.02 198.81 L 133.31 238.11 L 134.59 295.01 L 135.87 231.56 L 137.16 198.83 L 138.44 155.45 L 139.72 307.98 L 141.01 295.01 L 142.29 238.09 L 143.57 295.03 L 144.86 231.54 L 146.14 295.03 L 147.42 295.03 L 148.71 198.84 L 149.99 46.15 L 151.27 238.09 L 152.56 275.36 L 153.84 231.56 L 155.12 295.01 L 156.41 295.01 L 157.69 295.03 L 158.97 198.83 L 160.26 155.45 L 161.54 275.36 L 162.82 198.83 L 164.11 295.03 L 165.39 295.01 L 166.67 295.01 L 167.96 295.01 L 169.24 155.45 L 170.52 155.43 L 171.81 46.19 L 173.09 295.03 L 174.37 295.01 L 175.66 231.54 L 176.94 295.01 L 178.22 238.11 L 179.51 295.03 L 180.79 198.84 L 182.07 89.99 L 183.36 295.01 L 184.64 231.54 L 185.92 295.03 L 187.21 238.09 L 188.49 295.03 L 189.77 198.83 L 191.06 155.45 L 192.34 155.47 L 193.62 46.17 L 194.91 295.03 L 196.19 238.09 L 197.47 295.03 L 198.76 198.84 L 200.04 238.09 L 201.32 295.03 L 202.61 198.84 L 203.89 89.97 L 205.17 295.03 L 206.46 295.01 L 207.74 198.83 L 209.02 238.11 L 210.31 295.03 L 211.59 231.56 L 212.87 198.84 L 214.16 155.45 L 215.44 308.00 L 216.72 295.03 L 218.01 238.11 L 219.29 295.01 L 220.57 231.54 L 221.86 295.01 L 223.14 295.01 L 224.42 198.83 L 225.71 46.19 L 226.99 238.11 L 228.27 275.36 L 229.56 231.54 L 230.84 295.01 L 232.12 295.03 L 233.41 295.03 L 234.69 198.83 L 235.97 155.47 L 237.26 275.36 L 238.54 198.83 L 239.82 295.01 L 241.11 295.01 L 242.39 295.01 L 243.67 295.03 L 244.96 155.47 L 246.24 155.45 L 247.52 46.19 L 248.81 295.03 L 250.09 295.03 L 251.37 231.56 L 252.66 295.01 L 253.94 238.09 L 255.22 295.03 L 256.51 198.83 L 257.79 89.96 L 259.07 295.01 L 260.36 231.54 L 261.64 295.03 L 262.92 238.11 L 264.21 295.03 L 265.49 198.84 L 266.77 155.47 L 268.06 155.45 L 269.34 46.19 L 270.62 295.01 L 271.91 238.11 L 273.19 295.03 L 274.47 198.81 L 275.76 238.11 L 277.04 295.03 L 278.32 198.83 L 279.61 89.99 L 280.89 295.03 L 282.17 295.03 L 283.46 198.84 L 284.74 238.11 L 286.02 295.01 L 287.31 231.54 L 288.59 198.83 L 289.87 155.47 L 291.16 308.00 L 292.44 295.03 L 293.72 238.09 L 295.01 295.03 L 296.29 231.56 L 297.57 295.03 L 298.86 295.03 L 300.14 198.84 L 301.42 46.19 L 302.71 238.09 L 303.99 275.36 L 305.27 231.56 L 306.56 295.03 L 307.84 295.03 L 309.12 295.01 L 310.41 198.81 L 311.69 155.47 L 312.97 275.36 L 314.26 198.84 L 315.54 295.01 L 316.82 295.03 L 318.11 295.03 L 319.39 295.03 L 320.67 155.45 L 321.96 155.47 L 323.24 46.17 L 324.52 295.03 L 325.81 295.03 L 327.09 231.54 L 328.37 295.01 L 329.66 238.11 L 330.94 295.01 L 332.22 198.84 L 333.51 89.99 L 334.79 295.03 L 336.07 231.54 L 337.36 295.03 L 338.64 238.11 L 339.92 295.03 L 341.21 198.84 L 342.49 155.45 L 343.77 155.47 L 345.06 46.15 L 346.34 295.03 L 347.62 238.09 L 348.91 295.03 L 350.19 198.84 L 351.47 238.11 L 352.76 295.03 L 354.04 198.83 L 355.32 89.99 L 356.61 295.03 L 357.89 295.01 L 359.17 198.84 L 360.46 238.11 L 361.74 295.03 L 363.02 231.56 L 364.31 198.83 L 365.59 155.45 L 366.87 308.00 L 368.16 295.03 L 369.44 238.09 L 370.72 295.01 L 372.01 231.56 L 373.29 295.01 L 374.57 295.03 L 375.86 198.84 L 377.14 46.19 L 378.42 238.13 L 379.71 275.38 L 380.99 231.56 L 382.27 295.03 L 383.56 295.01 L 384.84 295.03 L 386.12 198.83 L 387.41 155.43 L 388.69 275.34 L 389.97 198.84 L 391.26 295.03 L 392.54 295.01 L 393.82 295.03 L 395.11 295.03 L 396.39 155.45 L 397.67 155.45 L 398.96 46.15 L 400.24 295.03 L 401.52 295.03 L 402.81 231.56 L 404.09 295.03 L 405.37 238.11 L 406.66 295.03 L 407.94 198.83 L 409.22 89.99 L 410.51 295.03 L 411.79 231.56 L 413.07 295.03 L 414.36 238.11 L 415.64 295.01 L 416.92 198.84 L 418.21 155.45 L 419.49 155.47 L 420.77 46.19 L 422.06 295.01 L 423.34 238.11 L 424.62 295.03 L 425.91 198.84 L 427.19 238.11 L 428.47 295.03 L 429.76 198.84 L 431.04 89.99 L 432.32 295.03 L 433.61 295.03 L 434.89 198.83 L 436.17 238.09 L 437.46 295.03 L 438.74 231.56 L 440.02 198.84 L 441.31 155.43 L 442.59 308.00 L 443.87 295.03 L 445.16 238.09 L 446.44 295.03 L 447.72 231.56 L 449.01 295.03 L 450.29 295.03 L 451.57 198.84 L 452.86 46.19 L 454.14 238.09 L 455.42 275.36 L 456.71 231.56 L 457.99 295.03 L 459.27 295.03 L 460.56 295.03 L 461.84 198.84 L 463.12 155.47 L 464.41 275.36 L 465.69 198.84 L 466.97 295.03 L 468.26 295.03 L 469.54 295.03 L 470.82 295.01 L 472.11 155.45 L 473.39 155.45 L 474.67 46.15 L 475.96 295.03 L 477.24 295.03 L 478.52 231.54 L 479.81 295.01 L 481.09 238.11 L 482.37 295.01 L 483.66 198.86 L 484.94 89.97 L 486.22 295.01 L 487.51 231.54 L 488.79 295.03 L 490.07 238.11 L 491.36 295.05 L 492.64 198.83 L 493.92 155.43 L 495.21 155.45 L 496.49 46.19 L 497.77 295.03 L 499.06 238.11 L 500.34 295.01 L 501.62 198.84 L 502.91 238.11 L 504.19 295.01 L 505.47 198.84 L 506.76 89.96 L 508.04 295.03 L 509.32 295.01 L 510.61 198.84 L 511.89 238.09 L 513.17 295.03 L 514.46 231.54 L 515.74 198.84 L 517.02 155.43 L 518.31 308.00 L 519.59 295.03 L 520.87 238.11 L 522.16 295.03 L 523.44 231.56 L 524.72 295.01 L 526.01 295.03 L 527.29 198.83 L 528.57 46.17 L 529.86 238.11 L 531.14 275.36 L 532.42 231.56 L 533.71 295.01 L 534.99 295.03 L 536.27 295.01 L 537.56 198.81 L 538.84 155.45 L 540.12 275.34 L 541.41 198.83 L 542.69 295.03 L 543.97 295.01 L 545.26 295.03 L 546.54 295.01 L 547.82 155.45 L 549.11 155.43 L 550.39 46.19 L 551.67 295.05 L 552.96 295.03 L 554.24 231.54 L 555.52 295.03 L 556.81 238.09 L 558.09 295.03 L 559.37 198.83 L 560.66 89.96 L 561.94 295.01 L 563.22 231.56 L 564.51 295.01 L 565.79 238.09 L 567.07 295.03 L 568.36 198.84 L 569.64 155.47 L 570.92 155.45 L 572.21 46.19 L 573.49 295.03 L 574.77 238.11 L 576.06 295.03 L 577.34 198.83 L 578.62 238.08 L 579.91 295.01 L 581.19 198.83 L 582.47 89.99 L 583.76 295.03 L 585.04 295.03 L 586.32 198.81 L 587.61 238.09 L 588.89 295.03 L 590.17 231.56 L 591.46 198.84" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="65.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="66.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="67.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="69.1" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="70.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="71.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="73.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="74.3" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="75.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="76.8" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="78.1" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="79.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="80.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="82.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="83.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="84.5" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="85.8" cy="275.3" r="3.1" fill="#1f5f8b"/><circle cx="87.1" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="88.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="89.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="91.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="92.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="93.5" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="94.8" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="96.1" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="97.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="98.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="99.9" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="101.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="102.5" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="103.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="105.1" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="106.4" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="107.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="108.9" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="110.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="111.5" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="112.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="114.1" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="115.3" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="116.6" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="117.9" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="119.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="120.5" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="121.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="123.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="124.3" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="125.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="126.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="128.2" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="129.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="130.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="132.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="133.3" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="134.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="135.9" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="137.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="138.4" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="139.7" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="141.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="142.3" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="143.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="144.9" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="146.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="147.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="148.7" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="150.0" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="151.3" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="152.6" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="153.8" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="155.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="156.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="157.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="159.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="160.3" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="161.5" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="162.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="164.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="165.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="166.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="168.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="169.2" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="170.5" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="171.8" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="173.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="174.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="175.7" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="176.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="178.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="179.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="180.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="182.1" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="183.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="184.6" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="185.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="187.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="188.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="189.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="191.1" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="192.3" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="193.6" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="194.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="196.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="197.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="198.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="200.0" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="201.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="202.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="203.9" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="205.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="206.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="207.7" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="209.0" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="210.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="211.6" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="212.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="214.2" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="215.4" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="216.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="218.0" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="219.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="220.6" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="221.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="223.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="224.4" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="225.7" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="227.0" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="228.3" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="229.6" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="230.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="232.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="233.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="234.7" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="236.0" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="237.3" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="238.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="239.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="241.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="242.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="243.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="245.0" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="246.2" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="247.5" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="248.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="250.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="251.4" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="252.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="253.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="255.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="256.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="257.8" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="259.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="260.4" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="261.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="262.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="264.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="265.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="266.8" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="268.1" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="269.3" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="270.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="271.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="273.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="274.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="275.8" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="277.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="278.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="279.6" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="280.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="282.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="283.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="284.7" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="286.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="287.3" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="288.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="289.9" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="291.2" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="292.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="293.7" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="295.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="296.3" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="297.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="298.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="300.1" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="301.4" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="302.7" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="304.0" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="305.3" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="306.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="307.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="309.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="310.4" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="311.7" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="313.0" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="314.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="315.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="316.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="318.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="319.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="320.7" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="322.0" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="323.2" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="324.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="325.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="327.1" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="328.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="329.7" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="330.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="332.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="333.5" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="334.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="336.1" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="337.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="338.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="339.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="341.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="342.5" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="343.8" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="345.1" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="346.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="347.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="348.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="350.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="351.5" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="352.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="354.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="355.3" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="356.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="357.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="359.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="360.5" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="361.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="363.0" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="364.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="365.6" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="366.9" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="368.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="369.4" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="370.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="372.0" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="373.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="374.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="375.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="377.1" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="378.4" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="379.7" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="381.0" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="382.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="383.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="384.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="386.1" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="387.4" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="388.7" cy="275.3" r="3.1" fill="#1f5f8b"/><circle cx="390.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="391.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="392.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="393.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="395.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="396.4" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="397.7" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="399.0" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="400.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="401.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="402.8" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="404.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="405.4" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="406.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="407.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="409.2" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="410.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="411.8" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="413.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="414.4" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="415.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="416.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="418.2" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="419.5" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="420.8" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="422.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="423.3" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="424.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="425.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="427.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="428.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="429.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="431.0" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="432.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="433.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="434.9" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="436.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="437.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="438.7" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="440.0" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="441.3" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="442.6" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="443.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="445.2" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="446.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="447.7" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="449.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="450.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="451.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="452.9" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="454.1" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="455.4" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="456.7" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="458.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="459.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="460.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="461.8" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="463.1" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="464.4" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="465.7" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="467.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="468.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="469.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="470.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="472.1" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="473.4" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="474.7" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="476.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="477.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="478.5" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="479.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="481.1" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="482.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="483.7" cy="198.9" r="3.1" fill="#1f5f8b"/><circle cx="484.9" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="486.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="487.5" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="488.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="490.1" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="491.4" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="492.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="493.9" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="495.2" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="496.5" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="497.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="499.1" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="500.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="501.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="502.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="504.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="505.5" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="506.8" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="508.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="509.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="510.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="511.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="513.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="514.5" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="515.7" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="517.0" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="518.3" cy="308.0" r="3.1" fill="#1f5f8b"/><circle cx="519.6" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="520.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="522.2" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="523.4" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="524.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="526.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="527.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="528.6" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="529.9" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="531.1" cy="275.4" r="3.1" fill="#1f5f8b"/><circle cx="532.4" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="533.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="535.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="536.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="537.6" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="538.8" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="540.1" cy="275.3" r="3.1" fill="#1f5f8b"/><circle cx="541.4" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="542.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="544.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="545.3" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="546.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="547.8" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="549.1" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="550.4" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="551.7" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="553.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="554.2" cy="231.5" r="3.1" fill="#1f5f8b"/><circle cx="555.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="556.8" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="558.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="559.4" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="560.7" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="561.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="563.2" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="564.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="565.8" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="567.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="568.4" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="569.6" cy="155.5" r="3.1" fill="#1f5f8b"/><circle cx="570.9" cy="155.4" r="3.1" fill="#1f5f8b"/><circle cx="572.2" cy="46.2" r="3.1" fill="#1f5f8b"/><circle cx="573.5" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="574.8" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="576.1" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="577.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="578.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="579.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="581.2" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="582.5" cy="90.0" r="3.1" fill="#1f5f8b"/><circle cx="583.8" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="585.0" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="586.3" cy="198.8" r="3.1" fill="#1f5f8b"/><circle cx="587.6" cy="238.1" r="3.1" fill="#1f5f8b"/><circle cx="588.9" cy="295.0" r="3.1" fill="#1f5f8b"/><circle cx="590.2" cy="231.6" r="3.1" fill="#1f5f8b"/><circle cx="591.5" cy="198.8" r="3.1" fill="#1f5f8b"/><path d="M 65.29 295.03 L 66.57 238.11 L 67.85 295.03 L 69.14 231.54 L 70.42 295.03 L 71.70 295.03 L 72.99 198.83 L 74.27 46.17 L 75.55 238.11 L 76.84 275.36 L 78.12 231.56 L 79.40 295.03 L 80.69 295.03 L 81.97 295.03 L 83.25 198.86 L 84.54 155.45 L 85.82 275.36 L 87.10 198.84 L 88.39 295.03 L 89.67 295.03 L 90.95 295.01 L 92.24 295.01 L 93.52 155.43 L 94.80 155.45 L 96.09 46.17 L 97.37 295.01 L 98.65 295.01 L 99.94 231.56 L 101.22 295.01 L 102.50 238.09 L 103.79 295.03 L 105.07 198.83 L 106.35 89.96 L 107.64 295.01 L 108.92 231.56 L 110.20 295.03 L 111.49 238.11 L 112.77 295.01 L 114.05 198.84 L 115.34 155.43 L 116.62 155.45 L 117.90 46.19 L 119.19 295.01 L 120.47 238.09 L 121.75 295.01 L 123.04 198.81 L 124.32 238.11 L 125.60 295.01 L 126.89 198.84 L 128.17 89.96 L 129.45 295.03 L 130.74 295.01 L 132.02 198.84 L 133.30 238.09 L 134.59 295.03 L 135.87 231.54 L 137.15 198.84 L 138.44 155.43 L 139.72 308.00 L 141.00 295.03 L 142.29 238.09 L 143.57 295.01 L 144.85 231.56 L 146.14 295.01 L 147.42 295.03 L 148.70 198.84 L 149.99 46.15 L 151.27 238.11 L 152.55 275.36 L 153.84 231.54 L 155.12 295.01 L 156.40 295.03 L 157.69 295.03 L 158.97 198.83 L 160.25 155.47 L 161.54 275.36 L 162.82 198.83 L 164.10 295.03 L 165.39 295.03 L 166.67 295.01 L 167.95 295.03 L 169.24 155.47 L 170.52 155.45 L 171.80 46.19 L 173.09 295.01 L 174.37 295.03 L 175.65 231.52 L 176.94 295.01 L 178.22 238.09 L 179.50 295.03 L 180.79 198.84 L 182.07 89.99 L 183.35 295.03 L 184.64 231.56 L 185.92 295.03 L 187.20 238.11 L 188.49 295.03 L 189.77 198.84 L 191.05 155.45 L 192.34 155.47 L 193.62 46.19 L 194.90 295.03 L 196.19 238.09 L 197.47 295.03 L 198.75 198.83 L 200.04 238.11 L 201.32 295.01 L 202.60 198.84 L 203.89 89.94 L 205.17 295.01 L 206.45 295.03 L 207.74 198.84 L 209.02 238.09 L 210.30 295.03 L 211.59 231.56 L 212.87 198.84 L 214.15 155.45 L 215.44 308.00 L 216.72 295.03 L 218.00 238.09 L 219.29 295.01 L 220.57 231.56 L 221.85 295.03 L 223.14 295.03 L 224.42 198.84 L 225.70 46.15 L 226.99 238.09 L 228.27 275.36 L 229.55 231.54 L 230.84 295.03 L 232.12 295.03 L 233.40 295.03 L 234.69 198.84 L 235.97 155.45 L 237.25 275.34 L 238.54 198.84 L 239.82 295.03 L 241.10 295.03 L 242.39 295.03 L 243.67 295.01 L 244.95 155.45 L 246.24 155.45 L 247.52 46.19 L 248.80 295.01 L 250.09 295.03 L 251.37 231.54 L 252.65 295.01 L 253.94 238.09 L 255.22 295.03 L 256.50 198.84 L 257.79 89.96 L 259.07 294.99 L 260.35 231.54 L 261.64 295.03 L 262.92 238.09 L 264.20 295.03 L 265.49 198.84 L 266.77 155.45 L 268.05 155.43 L 269.34 46.19 L 270.62 295.03 L 271.90 238.11 L 273.19 295.03 L 274.47 198.84 L 275.75 238.09 L 277.04 295.03 L 278.32 198.81 L 279.60 89.94 L 280.89 295.03 L 282.17 295.03 L 283.45 198.84 L 284.74 238.11 L 286.02 295.03 L 287.30 231.54 L 288.59 198.84 L 289.87 155.47 L 291.15 308.00 L 292.44 295.01 L 293.72 238.08 L 295.00 295.03 L 296.29 231.54 L 297.57 295.01 L 298.85 295.03 L 300.14 198.81 L 301.42 46.17 L 302.70 238.09 L 303.99 275.36 L 305.27 231.54 L 306.55 295.03 L 307.84 295.03 L 309.12 295.01 L 310.40 198.84 L 311.69 155.45 L 312.97 275.36 L 314.25 198.83 L 315.54 295.03 L 316.82 295.01 L 318.10 295.01 L 319.39 295.01 L 320.67 155.45 L 321.95 155.43 L 323.24 46.19 L 324.52 295.01 L 325.80 295.03 L 327.09 231.54 L 328.37 295.03 L 329.65 238.11 L 330.94 295.03 L 332.22 198.81 L 333.50 89.94 L 334.79 295.01 L 336.07 231.54 L 337.35 295.03 L 338.64 238.09 L 339.92 295.03 L 341.20 198.84 L 342.49 155.43 L 343.77 155.45 L 345.05 46.19 L 346.34 295.03 L 347.62 238.11 L 348.90 295.03 L 350.19 198.83 L 351.47 238.09 L 352.75 295.03 L 354.04 198.84 L 355.32 89.97 L 356.60 295.03 L 357.89 295.03 L 359.17 198.84 L 360.45 238.11 L 361.74 295.03 L 363.02 231.54 L 364.30 198.83 L 365.59 155.47 L 366.87 308.00 L 368.15 295.03 L 369.44 238.11 L 370.72 295.01 L 372.00 231.56 L 373.29 295.01 L 374.57 295.03 L 375.85 198.84 L 377.14 46.19 L 378.42 238.09 L 379.70 275.36 L 380.99 231.54 L 382.27 295.03 L 383.55 295.01 L 384.84 295.03 L 386.12 198.83 L 387.40 155.45 L 388.69 275.36 L 389.97 198.83 L 391.25 295.03 L 392.54 295.03 L 393.82 295.01 L 395.10 295.03 L 396.39 155.43 L 397.67 155.45 L 398.95 46.19 L 400.24 295.03 L 401.52 295.03 L 402.80 231.54 L 404.09 295.03 L 405.37 238.09 L 406.65 295.03 L 407.94 198.84 L 409.22 89.97 L 410.50 295.01 L 411.79 231.56 L 413.07 295.05 L 414.35 238.11 L 415.64 295.03 L 416.92 198.83 L 418.20 155.45 L 419.49 155.47 L 420.77 46.13 L 422.05 295.01 L 423.34 238.09 L 424.62 295.03 L 425.90 198.83 L 427.19 238.11 L 428.47 295.03 L 429.75 198.84 L 431.04 89.99 L 432.32 295.03 L 433.60 295.03 L 434.89 198.84 L 436.17 238.11 L 437.45 295.03 L 438.74 231.54 L 440.02 198.84 L 441.30 155.45 L 442.59 308.00 L 443.87 295.05 L 445.15 238.11 L 446.44 295.03 L 447.72 231.54 L 449.00 295.03 L 450.29 295.03 L 451.57 198.83 L 452.85 46.17 L 454.14 238.11 L 455.42 275.36 L 456.70 231.52 L 457.99 295.03 L 459.27 295.01 L 460.55 295.01 L 461.84 198.84 L 463.12 155.47 L 464.40 275.36 L 465.69 198.83 L 466.97 295.01 L 468.25 295.03 L 469.54 295.03 L 470.82 295.03 L 472.10 155.45 L 473.39 155.45 L 474.67 46.17 L 475.95 295.03 L 477.24 295.05 L 478.52 231.54 L 479.80 295.03 L 481.09 238.09 L 482.37 295.03 L 483.65 198.84 L 484.94 89.96 L 486.22 295.03 L 487.50 231.56 L 488.79 295.03 L 490.07 238.11 L 491.35 295.03 L 492.64 198.84 L 493.92 155.45 L 495.20 155.45 L 496.49 46.19 L 497.77 295.03 L 499.05 238.11 L 500.34 295.03 L 501.62 198.84 L 502.90 238.11 L 504.19 295.01 L 505.47 198.83 L 506.75 89.99 L 508.04 295.03 L 509.32 295.03 L 510.60 198.83 L 511.89 238.09 L 513.17 295.03 L 514.45 231.56 L 515.74 198.84 L 517.02 155.45 L 518.30 308.00 L 519.59 295.01 L 520.87 238.09 L 522.15 295.03 L 523.44 231.56 L 524.72 295.03 L 526.00 295.03 L 527.29 198.84 L 528.57 46.19 L 529.85 238.11 L 531.14 275.36 L 532.42 231.56 L 533.70 295.03 L 534.99 295.03 L 536.27 295.03 L 537.55 198.83 L 538.84 155.47 L 540.12 275.36 L 541.40 198.84 L 542.69 295.03 L 543.97 295.03 L 545.25 295.03 L 546.54 295.05 L 547.82 155.47 L 549.10 155.47 L 550.39 46.19 L 551.67 295.03 L 552.95 295.03 L 554.24 231.54 L 555.52 295.03 L 556.80 238.11 L 558.09 295.03 L 559.37 198.84 L 560.65 89.97 L 561.94 295.03 L 563.22 231.56 L 564.50 295.03 L 565.79 238.09 L 567.07 295.01 L 568.35 198.84 L 569.64 155.47 L 570.92 155.45 L 572.20 46.17 L 573.49 295.03 L 574.77 238.09 L 576.05 295.03 L 577.34 198.84 L 578.62 238.09 L 579.90 295.03 L 581.19 198.83 L 582.47 89.97 L 583.75 295.03 L 585.04 295.03 L 586.32 198.84 L 587.60 238.09 L 588.89 295.03 L 590.17 231.54 L 591.45 198.84" fill="none" stroke="#b64b4b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="65.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="66.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="67.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="69.1" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="70.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="71.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="73.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="74.3" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="75.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="76.8" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="78.1" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="79.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="80.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="82.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="83.3" cy="198.9" r="3.1" fill="#b64b4b"/><circle cx="84.5" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="85.8" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="87.1" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="88.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="89.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="91.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="92.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="93.5" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="94.8" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="96.1" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="97.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="98.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="99.9" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="101.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="102.5" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="103.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="105.1" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="106.4" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="107.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="108.9" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="110.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="111.5" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="112.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="114.1" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="115.3" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="116.6" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="117.9" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="119.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="120.5" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="121.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="123.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="124.3" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="125.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="126.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="128.2" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="129.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="130.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="132.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="133.3" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="134.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="135.9" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="137.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="138.4" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="139.7" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="141.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="142.3" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="143.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="144.9" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="146.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="147.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="148.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="150.0" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="151.3" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="152.6" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="153.8" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="155.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="156.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="157.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="159.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="160.3" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="161.5" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="162.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="164.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="165.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="166.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="168.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="169.2" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="170.5" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="171.8" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="173.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="174.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="175.7" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="176.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="178.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="179.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="180.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="182.1" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="183.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="184.6" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="185.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="187.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="188.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="189.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="191.1" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="192.3" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="193.6" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="194.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="196.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="197.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="198.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="200.0" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="201.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="202.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="203.9" cy="89.9" r="3.1" fill="#b64b4b"/><circle cx="205.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="206.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="207.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="209.0" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="210.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="211.6" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="212.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="214.2" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="215.4" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="216.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="218.0" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="219.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="220.6" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="221.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="223.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="224.4" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="225.7" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="227.0" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="228.3" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="229.6" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="230.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="232.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="233.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="234.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="236.0" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="237.3" cy="275.3" r="3.1" fill="#b64b4b"/><circle cx="238.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="239.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="241.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="242.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="243.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="245.0" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="246.2" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="247.5" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="248.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="250.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="251.4" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="252.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="253.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="255.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="256.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="257.8" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="259.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="260.4" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="261.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="262.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="264.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="265.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="266.8" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="268.1" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="269.3" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="270.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="271.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="273.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="274.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="275.8" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="277.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="278.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="279.6" cy="89.9" r="3.1" fill="#b64b4b"/><circle cx="280.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="282.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="283.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="284.7" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="286.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="287.3" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="288.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="289.9" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="291.2" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="292.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="293.7" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="295.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="296.3" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="297.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="298.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="300.1" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="301.4" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="302.7" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="304.0" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="305.3" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="306.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="307.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="309.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="310.4" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="311.7" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="313.0" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="314.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="315.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="316.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="318.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="319.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="320.7" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="322.0" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="323.2" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="324.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="325.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="327.1" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="328.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="329.7" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="330.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="332.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="333.5" cy="89.9" r="3.1" fill="#b64b4b"/><circle cx="334.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="336.1" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="337.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="338.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="339.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="341.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="342.5" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="343.8" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="345.1" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="346.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="347.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="348.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="350.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="351.5" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="352.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="354.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="355.3" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="356.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="357.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="359.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="360.5" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="361.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="363.0" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="364.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="365.6" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="366.9" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="368.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="369.4" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="370.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="372.0" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="373.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="374.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="375.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="377.1" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="378.4" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="379.7" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="381.0" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="382.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="383.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="384.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="386.1" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="387.4" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="388.7" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="390.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="391.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="392.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="393.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="395.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="396.4" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="397.7" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="399.0" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="400.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="401.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="402.8" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="404.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="405.4" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="406.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="407.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="409.2" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="410.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="411.8" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="413.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="414.4" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="415.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="416.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="418.2" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="419.5" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="420.8" cy="46.1" r="3.1" fill="#b64b4b"/><circle cx="422.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="423.3" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="424.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="425.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="427.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="428.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="429.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="431.0" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="432.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="433.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="434.9" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="436.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="437.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="438.7" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="440.0" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="441.3" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="442.6" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="443.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="445.2" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="446.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="447.7" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="449.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="450.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="451.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="452.9" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="454.1" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="455.4" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="456.7" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="458.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="459.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="460.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="461.8" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="463.1" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="464.4" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="465.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="467.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="468.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="469.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="470.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="472.1" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="473.4" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="474.7" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="476.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="477.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="478.5" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="479.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="481.1" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="482.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="483.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="484.9" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="486.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="487.5" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="488.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="490.1" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="491.4" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="492.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="493.9" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="495.2" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="496.5" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="497.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="499.1" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="500.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="501.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="502.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="504.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="505.5" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="506.8" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="508.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="509.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="510.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="511.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="513.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="514.5" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="515.7" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="517.0" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="518.3" cy="308.0" r="3.1" fill="#b64b4b"/><circle cx="519.6" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="520.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="522.2" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="523.4" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="524.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="526.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="527.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="528.6" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="529.9" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="531.1" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="532.4" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="533.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="535.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="536.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="537.6" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="538.8" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="540.1" cy="275.4" r="3.1" fill="#b64b4b"/><circle cx="541.4" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="542.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="544.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="545.3" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="546.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="547.8" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="549.1" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="550.4" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="551.7" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="553.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="554.2" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="555.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="556.8" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="558.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="559.4" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="560.7" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="561.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="563.2" cy="231.6" r="3.1" fill="#b64b4b"/><circle cx="564.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="565.8" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="567.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="568.4" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="569.6" cy="155.5" r="3.1" fill="#b64b4b"/><circle cx="570.9" cy="155.4" r="3.1" fill="#b64b4b"/><circle cx="572.2" cy="46.2" r="3.1" fill="#b64b4b"/><circle cx="573.5" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="574.8" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="576.1" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="577.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="578.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="579.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="581.2" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="582.5" cy="90.0" r="3.1" fill="#b64b4b"/><circle cx="583.8" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="585.0" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="586.3" cy="198.8" r="3.1" fill="#b64b4b"/><circle cx="587.6" cy="238.1" r="3.1" fill="#b64b4b"/><circle cx="588.9" cy="295.0" r="3.1" fill="#b64b4b"/><circle cx="590.2" cy="231.5" r="3.1" fill="#b64b4b"/><circle cx="591.5" cy="198.8" r="3.1" fill="#b64b4b"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="92" y="22" class="legend">50 h</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#b64b4b" stroke-width="2.5"/><text x="237" y="22" class="legend">1000 h</text></g></svg><figcaption>Phân bố profile dòng điện trong hai segment đầu/cuối. Profile tải lặp lại tạo ra nhiều mức current rời rạc, vì vậy cần phân tích theo current-bin.</figcaption></figure>
+        <div class="note">
+          Tải động chi phối phần lớn biến thiên điện áp tức thời; phân tích suy giảm theo thời gian phải tránh so sánh trực tiếp các điểm có current khác nhau.
+        </div>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>5. Dynamic Durability Analysis</h2>
+      
+    <div class="two-col">
+      <div>
+        <figure><svg viewBox="0 0 640 350" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="298" class="grid"/><line x1="173.6" y1="28" x2="173.6" y2="298" class="grid"/><line x1="283.2" y1="28" x2="283.2" y2="298" class="grid"/><line x1="392.8" y1="28" x2="392.8" y2="298" class="grid"/><line x1="502.4" y1="28" x2="502.4" y2="298" class="grid"/><line x1="612.0" y1="28" x2="612.0" y2="298" class="grid"/><line x1="64" y1="298.0" x2="612" y2="298.0" class="grid"/><line x1="64" y1="230.5" x2="612" y2="230.5" class="grid"/><line x1="64" y1="163.0" x2="612" y2="163.0" class="grid"/><line x1="64" y1="95.5" x2="612" y2="95.5" class="grid"/><line x1="64" y1="28.0" x2="612" y2="28.0" class="grid"/>
+    <line x1="64" y1="298" x2="612" y2="298" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="298" class="axis"/>
+    <text x="64.0" y="322" class="tick" text-anchor="middle">50</text><text x="173.6" y="322" class="tick" text-anchor="middle">240</text><text x="283.2" y="322" class="tick" text-anchor="middle">430</text><text x="392.8" y="322" class="tick" text-anchor="middle">620</text><text x="502.4" y="322" class="tick" text-anchor="middle">810</text><text x="612.0" y="322" class="tick" text-anchor="middle">1.000</text>
+    <text x="54" y="302.0" class="tick" text-anchor="end">0,700</text><text x="54" y="234.5" class="tick" text-anchor="end">0,765</text><text x="54" y="167.0" class="tick" text-anchor="end">0,830</text><text x="54" y="99.5" class="tick" text-anchor="end">0,895</text><text x="54" y="32.0" class="tick" text-anchor="end">0,960</text>
+    <text x="338" y="340" class="axis-label" text-anchor="middle">Aging label (h)</text>
+    <text x="18" y="163" class="axis-label" text-anchor="middle" transform="rotate(-90 18 163)">Voltage (V)</text>
+  <path d="M 64.00 224.79 L 92.84 232.47 L 121.68 238.18 L 150.53 255.32 L 179.37 245.56 L 208.21 250.96 L 237.05 245.97 L 265.89 256.05 L 294.74 260.41 L 323.58 263.42 L 352.42 261.65 L 381.26 264.35 L 410.11 266.02 L 438.95 269.44 L 467.79 270.07 L 496.63 262.07 L 525.47 256.36 L 554.32 256.67 L 583.16 253.66 L 612.00 252.62" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="224.8" r="3.1" fill="#1f5f8b"/><circle cx="92.8" cy="232.5" r="3.1" fill="#1f5f8b"/><circle cx="121.7" cy="238.2" r="3.1" fill="#1f5f8b"/><circle cx="150.5" cy="255.3" r="3.1" fill="#1f5f8b"/><circle cx="179.4" cy="245.6" r="3.1" fill="#1f5f8b"/><circle cx="208.2" cy="251.0" r="3.1" fill="#1f5f8b"/><circle cx="237.1" cy="246.0" r="3.1" fill="#1f5f8b"/><circle cx="265.9" cy="256.0" r="3.1" fill="#1f5f8b"/><circle cx="294.7" cy="260.4" r="3.1" fill="#1f5f8b"/><circle cx="323.6" cy="263.4" r="3.1" fill="#1f5f8b"/><circle cx="352.4" cy="261.7" r="3.1" fill="#1f5f8b"/><circle cx="381.3" cy="264.4" r="3.1" fill="#1f5f8b"/><circle cx="410.1" cy="266.0" r="3.1" fill="#1f5f8b"/><circle cx="438.9" cy="269.4" r="3.1" fill="#1f5f8b"/><circle cx="467.8" cy="270.1" r="3.1" fill="#1f5f8b"/><circle cx="496.6" cy="262.1" r="3.1" fill="#1f5f8b"/><circle cx="525.5" cy="256.4" r="3.1" fill="#1f5f8b"/><circle cx="554.3" cy="256.7" r="3.1" fill="#1f5f8b"/><circle cx="583.2" cy="253.7" r="3.1" fill="#1f5f8b"/><circle cx="612.0" cy="252.6" r="3.1" fill="#1f5f8b"/><path d="M 64.00 48.35 L 92.84 55.73 L 121.68 56.77 L 150.53 59.78 L 179.37 60.82 L 208.21 62.48 L 237.05 59.78 L 265.89 62.48 L 294.74 65.18 L 323.58 64.45 L 352.42 62.48 L 381.26 64.76 L 410.11 65.49 L 438.95 68.81 L 467.79 69.85 L 496.63 68.50 L 525.47 67.46 L 554.32 69.12 L 583.16 66.42 L 612.00 67.46" fill="none" stroke="#b87922" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="48.4" r="3.1" fill="#b87922"/><circle cx="92.8" cy="55.7" r="3.1" fill="#b87922"/><circle cx="121.7" cy="56.8" r="3.1" fill="#b87922"/><circle cx="150.5" cy="59.8" r="3.1" fill="#b87922"/><circle cx="179.4" cy="60.8" r="3.1" fill="#b87922"/><circle cx="208.2" cy="62.5" r="3.1" fill="#b87922"/><circle cx="237.1" cy="59.8" r="3.1" fill="#b87922"/><circle cx="265.9" cy="62.5" r="3.1" fill="#b87922"/><circle cx="294.7" cy="65.2" r="3.1" fill="#b87922"/><circle cx="323.6" cy="64.4" r="3.1" fill="#b87922"/><circle cx="352.4" cy="62.5" r="3.1" fill="#b87922"/><circle cx="381.3" cy="64.8" r="3.1" fill="#b87922"/><circle cx="410.1" cy="65.5" r="3.1" fill="#b87922"/><circle cx="438.9" cy="68.8" r="3.1" fill="#b87922"/><circle cx="467.8" cy="69.8" r="3.1" fill="#b87922"/><circle cx="496.6" cy="68.5" r="3.1" fill="#b87922"/><circle cx="525.5" cy="67.5" r="3.1" fill="#b87922"/><circle cx="554.3" cy="69.1" r="3.1" fill="#b87922"/><circle cx="583.2" cy="66.4" r="3.1" fill="#b87922"/><circle cx="612.0" cy="67.5" r="3.1" fill="#b87922"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="92" y="22" class="legend">Median V tải</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#b87922" stroke-width="2.5"/><text x="237" y="22" class="legend">Median OCV</text></g></svg><figcaption>Suy giảm điện áp median theo mốc aging. Điện áp dưới tải giảm nhanh hơn near-OCV, chỉ ra rằng aging được khuếch đại ở điều kiện có dòng.</figcaption></figure>
+      </div>
+      <div>
+        <h3>Empirical degradation rate</h3>
+        
+    <table class="compact">
+      <thead><tr><th>Metric</th><th>50 h</th><th>1000 h</th><th>ΔmV</th><th>Slope µV/h</th><th>Loss</th></tr></thead>
+      <tbody>
+        <tr><td>Median voltage under dynamic load</td><td>0,7705</td><td>0,7437</td><td>-26,8</td><td>-25,4</td><td>3,48%</td></tr><tr><td>Median open-circuit/near-zero-current voltage</td><td>0,9404</td><td>0,9220</td><td>-18,4</td><td>-15,3</td><td>1,96%</td></tr>
+      </tbody>
+    </table>
+  
+        <p>
+          Slope tuyến tính của voltage median dưới tải là <strong>-25,4 µV/h</strong>.
+          Endpoint loss là <strong>-26,8 mV</strong>, tương đương
+          <strong>3,48%</strong>. Đây là empirical degradation descriptor, không phải
+          hệ số cơ chế duy nhất của MEA.
+        </p>
+        <h3>Electrochemical interpretation</h3>
+        <ul>
+          <li>OCV loss phản ánh thay đổi reversible potential/crossover/mixed potential ở mức gần không tải.</li>
+          <li>Loaded-voltage loss lớn hơn OCV loss, phù hợp với tăng ohmic và transport-related overpotential.</li>
+          <li>Dao động nhẹ giai đoạn muộn gợi ý thành phần reversible do hydration hoặc điều kiện vận hành.</li>
+        </ul>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>6. Load-Conditioned Degradation</h2>
+      
+    <div class="two-col">
+      <div>
+        <figure><svg viewBox="0 0 640 380" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="328" class="grid"/><line x1="173.6" y1="28" x2="173.6" y2="328" class="grid"/><line x1="283.2" y1="28" x2="283.2" y2="328" class="grid"/><line x1="392.8" y1="28" x2="392.8" y2="328" class="grid"/><line x1="502.4" y1="28" x2="502.4" y2="328" class="grid"/><line x1="612.0" y1="28" x2="612.0" y2="328" class="grid"/><line x1="64" y1="328.0" x2="612" y2="328.0" class="grid"/><line x1="64" y1="253.0" x2="612" y2="253.0" class="grid"/><line x1="64" y1="178.0" x2="612" y2="178.0" class="grid"/><line x1="64" y1="103.0" x2="612" y2="103.0" class="grid"/><line x1="64" y1="28.0" x2="612" y2="28.0" class="grid"/>
+    <line x1="64" y1="328" x2="612" y2="328" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="328" class="axis"/>
+    <text x="64.0" y="352" class="tick" text-anchor="middle">50</text><text x="173.6" y="352" class="tick" text-anchor="middle">240</text><text x="283.2" y="352" class="tick" text-anchor="middle">430</text><text x="392.8" y="352" class="tick" text-anchor="middle">620</text><text x="502.4" y="352" class="tick" text-anchor="middle">810</text><text x="612.0" y="352" class="tick" text-anchor="middle">1.000</text>
+    <text x="54" y="332.0" class="tick" text-anchor="end">0,500</text><text x="54" y="257.0" class="tick" text-anchor="end">0,615</text><text x="54" y="182.0" class="tick" text-anchor="end">0,730</text><text x="54" y="107.0" class="tick" text-anchor="end">0,845</text><text x="54" y="32.0" class="tick" text-anchor="end">0,960</text>
+    <text x="338" y="370" class="axis-label" text-anchor="middle">Aging label (h)</text>
+    <text x="18" y="178" class="axis-label" text-anchor="middle" transform="rotate(-90 18 178)">Median voltage (V)</text>
+  <path d="M 64.00 40.78 L 92.84 45.41 L 121.68 46.07 L 150.53 47.96 L 179.37 48.61 L 208.21 49.65 L 237.05 47.96 L 265.89 49.65 L 294.74 51.35 L 323.58 50.89 L 352.42 49.65 L 381.26 51.09 L 410.11 51.54 L 438.95 53.63 L 467.79 54.28 L 496.63 53.43 L 525.47 52.78 L 554.32 53.83 L 583.16 52.13 L 612.00 52.78" fill="none" stroke="#6d6d6d" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="40.8" r="3.1" fill="#6d6d6d"/><circle cx="92.8" cy="45.4" r="3.1" fill="#6d6d6d"/><circle cx="121.7" cy="46.1" r="3.1" fill="#6d6d6d"/><circle cx="150.5" cy="48.0" r="3.1" fill="#6d6d6d"/><circle cx="179.4" cy="48.6" r="3.1" fill="#6d6d6d"/><circle cx="208.2" cy="49.7" r="3.1" fill="#6d6d6d"/><circle cx="237.1" cy="48.0" r="3.1" fill="#6d6d6d"/><circle cx="265.9" cy="49.7" r="3.1" fill="#6d6d6d"/><circle cx="294.7" cy="51.3" r="3.1" fill="#6d6d6d"/><circle cx="323.6" cy="50.9" r="3.1" fill="#6d6d6d"/><circle cx="352.4" cy="49.7" r="3.1" fill="#6d6d6d"/><circle cx="381.3" cy="51.1" r="3.1" fill="#6d6d6d"/><circle cx="410.1" cy="51.5" r="3.1" fill="#6d6d6d"/><circle cx="438.9" cy="53.6" r="3.1" fill="#6d6d6d"/><circle cx="467.8" cy="54.3" r="3.1" fill="#6d6d6d"/><circle cx="496.6" cy="53.4" r="3.1" fill="#6d6d6d"/><circle cx="525.5" cy="52.8" r="3.1" fill="#6d6d6d"/><circle cx="554.3" cy="53.8" r="3.1" fill="#6d6d6d"/><circle cx="583.2" cy="52.1" r="3.1" fill="#6d6d6d"/><circle cx="612.0" cy="52.8" r="3.1" fill="#6d6d6d"/><path d="M 64.00 88.39 L 92.84 93.67 L 121.68 95.96 L 150.53 100.39 L 179.37 99.54 L 208.21 101.43 L 237.05 100.39 L 265.89 103.33 L 294.74 105.02 L 323.58 104.83 L 352.42 104.63 L 381.26 105.22 L 410.11 107.57 L 438.95 108.41 L 467.79 109.07 L 496.63 106.52 L 525.47 105.02 L 554.32 105.02 L 583.16 105.02 L 612.00 104.43" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="88.4" r="3.1" fill="#1f5f8b"/><circle cx="92.8" cy="93.7" r="3.1" fill="#1f5f8b"/><circle cx="121.7" cy="96.0" r="3.1" fill="#1f5f8b"/><circle cx="150.5" cy="100.4" r="3.1" fill="#1f5f8b"/><circle cx="179.4" cy="99.5" r="3.1" fill="#1f5f8b"/><circle cx="208.2" cy="101.4" r="3.1" fill="#1f5f8b"/><circle cx="237.1" cy="100.4" r="3.1" fill="#1f5f8b"/><circle cx="265.9" cy="103.3" r="3.1" fill="#1f5f8b"/><circle cx="294.7" cy="105.0" r="3.1" fill="#1f5f8b"/><circle cx="323.6" cy="104.8" r="3.1" fill="#1f5f8b"/><circle cx="352.4" cy="104.6" r="3.1" fill="#1f5f8b"/><circle cx="381.3" cy="105.2" r="3.1" fill="#1f5f8b"/><circle cx="410.1" cy="107.6" r="3.1" fill="#1f5f8b"/><circle cx="438.9" cy="108.4" r="3.1" fill="#1f5f8b"/><circle cx="467.8" cy="109.1" r="3.1" fill="#1f5f8b"/><circle cx="496.6" cy="106.5" r="3.1" fill="#1f5f8b"/><circle cx="525.5" cy="105.0" r="3.1" fill="#1f5f8b"/><circle cx="554.3" cy="105.0" r="3.1" fill="#1f5f8b"/><circle cx="583.2" cy="105.0" r="3.1" fill="#1f5f8b"/><circle cx="612.0" cy="104.4" r="3.1" fill="#1f5f8b"/><path d="M 64.00 154.98 L 92.84 157.52 L 121.68 162.54 L 150.53 174.15 L 179.37 165.74 L 208.21 169.91 L 237.05 166.52 L 265.89 176.70 L 294.74 176.04 L 323.58 178.78 L 352.42 177.93 L 381.26 178.59 L 410.11 184.65 L 438.95 181.72 L 467.79 181.33 L 496.63 177.28 L 525.47 173.11 L 554.32 172.46 L 583.16 170.96 L 612.00 171.22" fill="none" stroke="#538a51" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="155.0" r="3.1" fill="#538a51"/><circle cx="92.8" cy="157.5" r="3.1" fill="#538a51"/><circle cx="121.7" cy="162.5" r="3.1" fill="#538a51"/><circle cx="150.5" cy="174.2" r="3.1" fill="#538a51"/><circle cx="179.4" cy="165.7" r="3.1" fill="#538a51"/><circle cx="208.2" cy="169.9" r="3.1" fill="#538a51"/><circle cx="237.1" cy="166.5" r="3.1" fill="#538a51"/><circle cx="265.9" cy="176.7" r="3.1" fill="#538a51"/><circle cx="294.7" cy="176.0" r="3.1" fill="#538a51"/><circle cx="323.6" cy="178.8" r="3.1" fill="#538a51"/><circle cx="352.4" cy="177.9" r="3.1" fill="#538a51"/><circle cx="381.3" cy="178.6" r="3.1" fill="#538a51"/><circle cx="410.1" cy="184.7" r="3.1" fill="#538a51"/><circle cx="438.9" cy="181.7" r="3.1" fill="#538a51"/><circle cx="467.8" cy="181.3" r="3.1" fill="#538a51"/><circle cx="496.6" cy="177.3" r="3.1" fill="#538a51"/><circle cx="525.5" cy="173.1" r="3.1" fill="#538a51"/><circle cx="554.3" cy="172.5" r="3.1" fill="#538a51"/><circle cx="583.2" cy="171.0" r="3.1" fill="#538a51"/><circle cx="612.0" cy="171.2" r="3.1" fill="#538a51"/><path d="M 64.00 179.83 L 92.84 183.80 L 121.68 189.09 L 150.53 202.59 L 179.37 193.72 L 208.21 199.39 L 237.05 194.57 L 265.89 205.98 L 294.74 206.37 L 323.58 208.91 L 352.42 207.41 L 381.26 209.76 L 410.11 215.24 L 438.95 214.78 L 467.79 214.59 L 496.63 209.50 L 525.47 203.43 L 554.32 203.43 L 583.16 200.50 L 612.00 200.70" fill="none" stroke="#8f6b4f" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="179.8" r="3.1" fill="#8f6b4f"/><circle cx="92.8" cy="183.8" r="3.1" fill="#8f6b4f"/><circle cx="121.7" cy="189.1" r="3.1" fill="#8f6b4f"/><circle cx="150.5" cy="202.6" r="3.1" fill="#8f6b4f"/><circle cx="179.4" cy="193.7" r="3.1" fill="#8f6b4f"/><circle cx="208.2" cy="199.4" r="3.1" fill="#8f6b4f"/><circle cx="237.1" cy="194.6" r="3.1" fill="#8f6b4f"/><circle cx="265.9" cy="206.0" r="3.1" fill="#8f6b4f"/><circle cx="294.7" cy="206.4" r="3.1" fill="#8f6b4f"/><circle cx="323.6" cy="208.9" r="3.1" fill="#8f6b4f"/><circle cx="352.4" cy="207.4" r="3.1" fill="#8f6b4f"/><circle cx="381.3" cy="209.8" r="3.1" fill="#8f6b4f"/><circle cx="410.1" cy="215.2" r="3.1" fill="#8f6b4f"/><circle cx="438.9" cy="214.8" r="3.1" fill="#8f6b4f"/><circle cx="467.8" cy="214.6" r="3.1" fill="#8f6b4f"/><circle cx="496.6" cy="209.5" r="3.1" fill="#8f6b4f"/><circle cx="525.5" cy="203.4" r="3.1" fill="#8f6b4f"/><circle cx="554.3" cy="203.4" r="3.1" fill="#8f6b4f"/><circle cx="583.2" cy="200.5" r="3.1" fill="#8f6b4f"/><circle cx="612.0" cy="200.7" r="3.1" fill="#8f6b4f"/><path d="M 64.00 208.26 L 92.84 212.50 L 121.68 218.83 L 150.53 232.26 L 179.37 224.04 L 208.21 230.37 L 237.05 225.74 L 265.89 236.70 L 294.74 238.39 L 323.58 239.43 L 352.42 237.54 L 381.26 240.48 L 410.11 244.26 L 438.95 247.26 L 467.79 248.50 L 496.63 242.83 L 525.47 235.00 L 554.32 237.35 L 583.16 233.96 L 612.00 233.76" fill="none" stroke="#b87922" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="208.3" r="3.1" fill="#b87922"/><circle cx="92.8" cy="212.5" r="3.1" fill="#b87922"/><circle cx="121.7" cy="218.8" r="3.1" fill="#b87922"/><circle cx="150.5" cy="232.3" r="3.1" fill="#b87922"/><circle cx="179.4" cy="224.0" r="3.1" fill="#b87922"/><circle cx="208.2" cy="230.4" r="3.1" fill="#b87922"/><circle cx="237.1" cy="225.7" r="3.1" fill="#b87922"/><circle cx="265.9" cy="236.7" r="3.1" fill="#b87922"/><circle cx="294.7" cy="238.4" r="3.1" fill="#b87922"/><circle cx="323.6" cy="239.4" r="3.1" fill="#b87922"/><circle cx="352.4" cy="237.5" r="3.1" fill="#b87922"/><circle cx="381.3" cy="240.5" r="3.1" fill="#b87922"/><circle cx="410.1" cy="244.3" r="3.1" fill="#b87922"/><circle cx="438.9" cy="247.3" r="3.1" fill="#b87922"/><circle cx="467.8" cy="248.5" r="3.1" fill="#b87922"/><circle cx="496.6" cy="242.8" r="3.1" fill="#b87922"/><circle cx="525.5" cy="235.0" r="3.1" fill="#b87922"/><circle cx="554.3" cy="237.3" r="3.1" fill="#b87922"/><circle cx="583.2" cy="234.0" r="3.1" fill="#b87922"/><circle cx="612.0" cy="233.8" r="3.1" fill="#b87922"/><path d="M 64.00 277.98 L 92.84 283.46 L 121.68 289.13 L 150.53 299.04 L 179.37 295.72 L 208.21 301.39 L 237.05 298.85 L 265.89 307.26 L 294.74 308.96 L 323.58 306.41 L 352.42 304.98 L 381.26 309.15 L 410.11 312.74 L 438.95 319.91 L 467.79 322.00 L 496.63 316.98 L 525.47 311.04 L 554.32 313.59 L 583.16 312.35 L 612.00 310.46" fill="none" stroke="#b64b4b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="278.0" r="3.1" fill="#b64b4b"/><circle cx="92.8" cy="283.5" r="3.1" fill="#b64b4b"/><circle cx="121.7" cy="289.1" r="3.1" fill="#b64b4b"/><circle cx="150.5" cy="299.0" r="3.1" fill="#b64b4b"/><circle cx="179.4" cy="295.7" r="3.1" fill="#b64b4b"/><circle cx="208.2" cy="301.4" r="3.1" fill="#b64b4b"/><circle cx="237.1" cy="298.8" r="3.1" fill="#b64b4b"/><circle cx="265.9" cy="307.3" r="3.1" fill="#b64b4b"/><circle cx="294.7" cy="309.0" r="3.1" fill="#b64b4b"/><circle cx="323.6" cy="306.4" r="3.1" fill="#b64b4b"/><circle cx="352.4" cy="305.0" r="3.1" fill="#b64b4b"/><circle cx="381.3" cy="309.2" r="3.1" fill="#b64b4b"/><circle cx="410.1" cy="312.7" r="3.1" fill="#b64b4b"/><circle cx="438.9" cy="319.9" r="3.1" fill="#b64b4b"/><circle cx="467.8" cy="322.0" r="3.1" fill="#b64b4b"/><circle cx="496.6" cy="317.0" r="3.1" fill="#b64b4b"/><circle cx="525.5" cy="311.0" r="3.1" fill="#b64b4b"/><circle cx="554.3" cy="313.6" r="3.1" fill="#b64b4b"/><circle cx="583.2" cy="312.3" r="3.1" fill="#b64b4b"/><circle cx="612.0" cy="310.5" r="3.1" fill="#b64b4b"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#6d6d6d" stroke-width="2.5"/><text x="92" y="22" class="legend">0 A / OCV</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="237" y="22" class="legend">1.8 A</text></g><g><line x1="354" y1="18" x2="376" y2="18" stroke="#538a51" stroke-width="2.5"/><text x="382" y="22" class="legend">9.5 A</text></g><g><line x1="499" y1="18" x2="521" y2="18" stroke="#8f6b4f" stroke-width="2.5"/><text x="527" y="22" class="legend">14.8 A</text></g><g><line x1="644" y1="18" x2="666" y2="18" stroke="#b87922" stroke-width="2.5"/><text x="672" y="22" class="legend">20.7 A</text></g><g><line x1="789" y1="18" x2="811" y2="18" stroke="#b64b4b" stroke-width="2.5"/><text x="817" y="22" class="legend">35.5 A</text></g></svg><figcaption>Voltage median theo từng bin dòng điện. Các bin dòng cao suy giảm nhanh hơn, cho thấy performance loss tăng khi stress vận hành tăng.</figcaption></figure>
+      </div>
+      <div>
+        <figure>
+    <svg viewBox="0 0 620 340" role="img" class="chart-svg">
+      <line x1="58" y1="282.0" x2="598" y2="282.0" class="grid"/><line x1="58" y1="218.5" x2="598" y2="218.5" class="grid"/><line x1="58" y1="155.0" x2="598" y2="155.0" class="grid"/><line x1="58" y1="91.5" x2="598" y2="91.5" class="grid"/><line x1="58" y1="28.0" x2="598" y2="28.0" class="grid"/>
+      <line x1="58" y1="282" x2="598" y2="282" class="axis"/>
+      <line x1="58" y1="28" x2="58" y2="282" class="axis"/>
+      <text x="50" y="286.0" class="tick" text-anchor="end">-56</text><text x="50" y="222.5" class="tick" text-anchor="end">-41</text><text x="50" y="159.0" class="tick" text-anchor="end">-26</text><text x="50" y="95.5" class="tick" text-anchor="end">-10</text><text x="50" y="32.0" class="tick" text-anchor="end">5</text>
+      
+        <rect x="71" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="418.8" y="282.0" width="134.2" height="0"/>
+        <rect x="71" y="213.1" width="34" height="68.85028305809713" fill="#7b7b7b"/>
+        <text x="88" y="308" text-anchor="middle" class="tick">0</text>
+        <text x="88" y="206.1" text-anchor="middle" class="small-value">-15</text>
+      
+        <rect x="131" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="367.5" y="282.0" width="185.5" height="0"/>
+        <rect x="131" y="186.8" width="34" height="95.19888695800536" fill="#1f5f8b"/>
+        <text x="148" y="308" text-anchor="middle" class="tick">1.8</text>
+        <text x="148" y="179.8" text-anchor="middle" class="small-value">-21</text>
+      
+        <rect x="191" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="369.8" y="282.0" width="183.2" height="0"/>
+        <rect x="191" y="188.0" width="34" height="93.99383775600609" fill="#1f5f8b"/>
+        <text x="208" y="308" text-anchor="middle" class="tick">4.4</text>
+        <text x="208" y="181.0" text-anchor="middle" class="small-value">-21</text>
+      
+        <rect x="251" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="339.6" y="282.0" width="213.4" height="0"/>
+        <rect x="251" y="172.5" width="34" height="109.48345895923806" fill="#1f5f8b"/>
+        <text x="268" y="308" text-anchor="middle" class="tick">9.5</text>
+        <text x="268" y="165.5" text-anchor="middle" class="small-value">-24</text>
+      
+        <rect x="311" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="330.0" y="282.0" width="223.0" height="0"/>
+        <rect x="311" y="167.6" width="34" height="114.43905455398856" fill="#1f5f8b"/>
+        <text x="328" y="308" text-anchor="middle" class="tick">10.4</text>
+        <text x="328" y="160.6" text-anchor="middle" class="small-value">-25</text>
+      
+        <rect x="371" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="267.1" y="282.0" width="285.9" height="0"/>
+        <rect x="371" y="135.3" width="34" height="146.72489525251189" fill="#1f5f8b"/>
+        <text x="388" y="308" text-anchor="middle" class="tick">14.8</text>
+        <text x="388" y="128.3" text-anchor="middle" class="small-value">-33</text>
+      
+        <rect x="431" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="204.0" y="282.0" width="349.0" height="0"/>
+        <rect x="431" y="102.9" width="34" height="179.09874516242434" fill="#b64b4b"/>
+        <text x="448" y="308" text-anchor="middle" class="tick">20.7</text>
+        <text x="448" y="95.9" text-anchor="middle" class="small-value">-40</text>
+      
+        <rect x="491" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="110.8" y="282.0" width="442.2" height="0"/>
+        <rect x="491" y="55.1" width="34" height="226.9114417305407" fill="#b64b4b"/>
+        <text x="508" y="308" text-anchor="middle" class="tick">29.6</text>
+        <text x="508" y="48.1" text-anchor="middle" class="small-value">-50</text>
+      
+        <rect x="551" y="28" width="34" height="254" fill="#f7f9fb"/>
+        <rect x="103.0" y="282.0" width="450.0" height="0"/>
+        <rect x="551" y="51.1" width="34" height="230.90909090909093" fill="#b64b4b"/>
+        <text x="568" y="308" text-anchor="middle" class="tick">35.5</text>
+        <text x="568" y="44.1" text-anchor="middle" class="small-value">-51</text>
+      
+      <text x="328" y="332" text-anchor="middle" class="axis-label">Current bin (A)</text>
+      <text x="18" y="155" class="axis-label" text-anchor="middle" transform="rotate(-90 18 155)">Slope (µV/h)</text>
+    </svg>
+  <figcaption>Slope suy giảm theo bin dòng điện. Trục y là µV/h từ fit tuyến tính theo aging label.</figcaption></figure>
+      </div>
+    </div>
+    <div class="table-caption">Degradation descriptors theo current-bin.</div>
+    
+    <table class="compact">
+      <thead><tr><th>Current bin</th><th>N</th><th>V@50h</th><th>V@1000h</th><th>ΔmV</th><th>Slope µV/h</th><th>Loss</th></tr></thead>
+      <tbody>
+        <tr><td>0,0 A</td><td>107.664</td><td>0,9404</td><td>0,9220</td><td>-18,4</td><td>-15,3</td><td>1,96%</td></tr><tr><td>1,8 A</td><td>1.414.408</td><td>0,8674</td><td>0,8428</td><td>-24,6</td><td>-21,1</td><td>2,84%</td></tr><tr><td>4,4 A</td><td>159.930</td><td>0,8183</td><td>0,7950</td><td>-23,3</td><td>-20,9</td><td>2,85%</td></tr><tr><td>9,5 A</td><td>423.564</td><td>0,7653</td><td>0,7404</td><td>-24,9</td><td>-24,3</td><td>3,25%</td></tr><tr><td>10,4 A</td><td>307.616</td><td>0,7640</td><td>0,7375</td><td>-26,5</td><td>-25,4</td><td>3,47%</td></tr><tr><td>14,8 A</td><td>490.892</td><td>0,7272</td><td>0,6952</td><td>-32,0</td><td>-32,6</td><td>4,40%</td></tr><tr><td>20,7 A</td><td>437.653</td><td>0,6836</td><td>0,6445</td><td>-39,1</td><td>-39,8</td><td>5,72%</td></tr><tr><td>29,6 A</td><td>152.577</td><td>0,6209</td><td>0,5725</td><td>-48,4</td><td>-50,4</td><td>7,80%</td></tr><tr><td>35,5 A</td><td>135.333</td><td>0,5767</td><td>0,5269</td><td>-49,8</td><td>-51,3</td><td>8,64%</td></tr>
+      </tbody>
+    </table>
+  
+    <p>
+      Kết quả này là điểm quan trọng nhất về thiết kế mô hình: nếu huấn luyện trực tiếp trên voltage thô,
+      mô hình sẽ chủ yếu học polarization tức thời do current. Health indicator đáng tin cậy hơn nên là
+      voltage residual sau khi điều kiện hóa theo current-bin hoặc theo một polarization baseline.
+    </p>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>7. Polarization Curve Analysis</h2>
+      
+    <div class="two-col">
+      <div>
+        <figure><svg viewBox="0 0 640 380" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="328" class="grid"/><line x1="173.6" y1="28" x2="173.6" y2="328" class="grid"/><line x1="283.2" y1="28" x2="283.2" y2="328" class="grid"/><line x1="392.8" y1="28" x2="392.8" y2="328" class="grid"/><line x1="502.4" y1="28" x2="502.4" y2="328" class="grid"/><line x1="612.0" y1="28" x2="612.0" y2="328" class="grid"/><line x1="64" y1="328.0" x2="612" y2="328.0" class="grid"/><line x1="64" y1="253.0" x2="612" y2="253.0" class="grid"/><line x1="64" y1="178.0" x2="612" y2="178.0" class="grid"/><line x1="64" y1="103.0" x2="612" y2="103.0" class="grid"/><line x1="64" y1="28.0" x2="612" y2="28.0" class="grid"/>
+    <line x1="64" y1="328" x2="612" y2="328" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="328" class="axis"/>
+    <text x="64.0" y="352" class="tick" text-anchor="middle">0</text><text x="173.6" y="352" class="tick" text-anchor="middle">13</text><text x="283.2" y="352" class="tick" text-anchor="middle">26</text><text x="392.8" y="352" class="tick" text-anchor="middle">40</text><text x="502.4" y="352" class="tick" text-anchor="middle">53</text><text x="612.0" y="352" class="tick" text-anchor="middle">66</text>
+    <text x="54" y="332.0" class="tick" text-anchor="end">0,30</text><text x="54" y="257.0" class="tick" text-anchor="end">0,48</text><text x="54" y="182.0" class="tick" text-anchor="end">0,65</text><text x="54" y="107.0" class="tick" text-anchor="end">0,83</text><text x="54" y="32.0" class="tick" text-anchor="end">1,00</text>
+    <text x="338" y="370" class="axis-label" text-anchor="middle">Current (A)</text>
+    <text x="18" y="178" class="axis-label" text-anchor="middle" transform="rotate(-90 18 178)">Cell voltage (V)</text>
+  <path d="M 64.00 49.00 L 64.00 47.71 L 68.03 65.29 L 68.04 61.86 L 72.19 72.14 L 72.19 69.14 L 76.32 77.29 L 76.32 74.29 L 80.44 82.00 L 80.46 78.14 L 84.60 81.57 L 84.61 85.86 L 105.36 96.57 L 105.37 100.00 L 126.10 109.00 L 126.11 105.57 L 146.83 116.71 L 146.84 112.86 L 188.25 129.57 L 188.28 125.71 L 229.70 142.43 L 229.71 137.71 L 271.13 154.43 L 271.15 149.29 L 312.58 160.86 L 312.58 166.43 L 354.06 172.43 L 354.07 179.71 L 395.60 186.57 L 395.62 193.86 L 437.12 211.43 L 437.12 201.57 L 478.65 229.86 L 478.65 221.29 L 520.14 253.86 L 520.16 243.57 L 561.68 270.14 L 561.70 279.14 L 603.19 300.14" fill="none" stroke="#111827" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="49.0" r="3.1" fill="#111827"/><circle cx="64.0" cy="47.7" r="3.1" fill="#111827"/><circle cx="68.0" cy="65.3" r="3.1" fill="#111827"/><circle cx="68.0" cy="61.9" r="3.1" fill="#111827"/><circle cx="72.2" cy="72.1" r="3.1" fill="#111827"/><circle cx="72.2" cy="69.1" r="3.1" fill="#111827"/><circle cx="76.3" cy="77.3" r="3.1" fill="#111827"/><circle cx="76.3" cy="74.3" r="3.1" fill="#111827"/><circle cx="80.4" cy="82.0" r="3.1" fill="#111827"/><circle cx="80.5" cy="78.1" r="3.1" fill="#111827"/><circle cx="84.6" cy="81.6" r="3.1" fill="#111827"/><circle cx="84.6" cy="85.9" r="3.1" fill="#111827"/><circle cx="105.4" cy="96.6" r="3.1" fill="#111827"/><circle cx="105.4" cy="100.0" r="3.1" fill="#111827"/><circle cx="126.1" cy="109.0" r="3.1" fill="#111827"/><circle cx="126.1" cy="105.6" r="3.1" fill="#111827"/><circle cx="146.8" cy="116.7" r="3.1" fill="#111827"/><circle cx="146.8" cy="112.9" r="3.1" fill="#111827"/><circle cx="188.3" cy="129.6" r="3.1" fill="#111827"/><circle cx="188.3" cy="125.7" r="3.1" fill="#111827"/><circle cx="229.7" cy="142.4" r="3.1" fill="#111827"/><circle cx="229.7" cy="137.7" r="3.1" fill="#111827"/><circle cx="271.1" cy="154.4" r="3.1" fill="#111827"/><circle cx="271.2" cy="149.3" r="3.1" fill="#111827"/><circle cx="312.6" cy="160.9" r="3.1" fill="#111827"/><circle cx="312.6" cy="166.4" r="3.1" fill="#111827"/><circle cx="354.1" cy="172.4" r="3.1" fill="#111827"/><circle cx="354.1" cy="179.7" r="3.1" fill="#111827"/><circle cx="395.6" cy="186.6" r="3.1" fill="#111827"/><circle cx="395.6" cy="193.9" r="3.1" fill="#111827"/><circle cx="437.1" cy="211.4" r="3.1" fill="#111827"/><circle cx="437.1" cy="201.6" r="3.1" fill="#111827"/><circle cx="478.6" cy="229.9" r="3.1" fill="#111827"/><circle cx="478.7" cy="221.3" r="3.1" fill="#111827"/><circle cx="520.1" cy="253.9" r="3.1" fill="#111827"/><circle cx="520.2" cy="243.6" r="3.1" fill="#111827"/><circle cx="561.7" cy="270.1" r="3.1" fill="#111827"/><circle cx="561.7" cy="279.1" r="3.1" fill="#111827"/><circle cx="603.2" cy="300.1" r="3.1" fill="#111827"/><path d="M 64.00 58.86 L 64.00 57.57 L 68.02 76.43 L 68.03 73.86 L 72.19 85.00 L 72.19 81.57 L 76.31 86.71 L 76.31 91.00 L 80.43 90.57 L 80.45 95.71 L 84.59 99.57 L 84.60 93.57 L 105.37 114.14 L 105.37 108.57 L 126.11 116.71 L 126.11 124.00 L 146.84 133.43 L 146.85 124.43 L 188.28 151.00 L 188.29 139.00 L 229.70 152.71 L 229.72 166.43 L 271.12 166.43 L 271.15 181.86 L 312.58 180.57 L 312.60 197.29 L 354.08 212.71 L 354.09 196.43 L 395.63 213.14 L 395.64 229.00 L 437.10 245.29 L 437.13 232.86 L 478.67 263.71 L 478.67 255.14 L 520.14 279.57 L 520.15 286.00 L 561.67 306.57" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="58.9" r="3.1" fill="#1f5f8b"/><circle cx="64.0" cy="57.6" r="3.1" fill="#1f5f8b"/><circle cx="68.0" cy="76.4" r="3.1" fill="#1f5f8b"/><circle cx="68.0" cy="73.9" r="3.1" fill="#1f5f8b"/><circle cx="72.2" cy="85.0" r="3.1" fill="#1f5f8b"/><circle cx="72.2" cy="81.6" r="3.1" fill="#1f5f8b"/><circle cx="76.3" cy="86.7" r="3.1" fill="#1f5f8b"/><circle cx="76.3" cy="91.0" r="3.1" fill="#1f5f8b"/><circle cx="80.4" cy="90.6" r="3.1" fill="#1f5f8b"/><circle cx="80.4" cy="95.7" r="3.1" fill="#1f5f8b"/><circle cx="84.6" cy="99.6" r="3.1" fill="#1f5f8b"/><circle cx="84.6" cy="93.6" r="3.1" fill="#1f5f8b"/><circle cx="105.4" cy="114.1" r="3.1" fill="#1f5f8b"/><circle cx="105.4" cy="108.6" r="3.1" fill="#1f5f8b"/><circle cx="126.1" cy="116.7" r="3.1" fill="#1f5f8b"/><circle cx="126.1" cy="124.0" r="3.1" fill="#1f5f8b"/><circle cx="146.8" cy="133.4" r="3.1" fill="#1f5f8b"/><circle cx="146.8" cy="124.4" r="3.1" fill="#1f5f8b"/><circle cx="188.3" cy="151.0" r="3.1" fill="#1f5f8b"/><circle cx="188.3" cy="139.0" r="3.1" fill="#1f5f8b"/><circle cx="229.7" cy="152.7" r="3.1" fill="#1f5f8b"/><circle cx="229.7" cy="166.4" r="3.1" fill="#1f5f8b"/><circle cx="271.1" cy="166.4" r="3.1" fill="#1f5f8b"/><circle cx="271.2" cy="181.9" r="3.1" fill="#1f5f8b"/><circle cx="312.6" cy="180.6" r="3.1" fill="#1f5f8b"/><circle cx="312.6" cy="197.3" r="3.1" fill="#1f5f8b"/><circle cx="354.1" cy="212.7" r="3.1" fill="#1f5f8b"/><circle cx="354.1" cy="196.4" r="3.1" fill="#1f5f8b"/><circle cx="395.6" cy="213.1" r="3.1" fill="#1f5f8b"/><circle cx="395.6" cy="229.0" r="3.1" fill="#1f5f8b"/><circle cx="437.1" cy="245.3" r="3.1" fill="#1f5f8b"/><circle cx="437.1" cy="232.9" r="3.1" fill="#1f5f8b"/><circle cx="478.7" cy="263.7" r="3.1" fill="#1f5f8b"/><circle cx="478.7" cy="255.1" r="3.1" fill="#1f5f8b"/><circle cx="520.1" cy="279.6" r="3.1" fill="#1f5f8b"/><circle cx="520.2" cy="286.0" r="3.1" fill="#1f5f8b"/><circle cx="561.7" cy="306.6" r="3.1" fill="#1f5f8b"/><path d="M 64.00 62.29 L 64.00 61.43 L 68.03 82.00 L 68.04 79.00 L 72.19 91.43 L 72.20 87.14 L 76.31 97.86 L 76.33 93.14 L 80.45 103.43 L 80.46 97.43 L 84.60 107.71 L 84.61 100.86 L 105.37 124.86 L 105.37 117.14 L 126.11 138.14 L 126.11 129.57 L 146.85 149.29 L 146.85 140.29 L 188.26 168.57 L 188.26 158.71 L 229.70 186.14 L 229.70 175.00 L 271.16 202.00 L 271.17 190.86 L 312.58 215.71 L 312.62 205.43 L 354.07 229.43 L 354.08 220.00 L 395.61 242.29 L 395.61 235.00 L 437.13 253.00 L 437.13 249.14 L 478.65 264.57 L 478.67 267.57 L 520.14 280.00 L 520.17 282.14 L 561.72 296.29" fill="none" stroke="#b87922" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="62.3" r="3.1" fill="#b87922"/><circle cx="64.0" cy="61.4" r="3.1" fill="#b87922"/><circle cx="68.0" cy="82.0" r="3.1" fill="#b87922"/><circle cx="68.0" cy="79.0" r="3.1" fill="#b87922"/><circle cx="72.2" cy="91.4" r="3.1" fill="#b87922"/><circle cx="72.2" cy="87.1" r="3.1" fill="#b87922"/><circle cx="76.3" cy="97.9" r="3.1" fill="#b87922"/><circle cx="76.3" cy="93.1" r="3.1" fill="#b87922"/><circle cx="80.4" cy="103.4" r="3.1" fill="#b87922"/><circle cx="80.5" cy="97.4" r="3.1" fill="#b87922"/><circle cx="84.6" cy="107.7" r="3.1" fill="#b87922"/><circle cx="84.6" cy="100.9" r="3.1" fill="#b87922"/><circle cx="105.4" cy="124.9" r="3.1" fill="#b87922"/><circle cx="105.4" cy="117.1" r="3.1" fill="#b87922"/><circle cx="126.1" cy="138.1" r="3.1" fill="#b87922"/><circle cx="126.1" cy="129.6" r="3.1" fill="#b87922"/><circle cx="146.8" cy="149.3" r="3.1" fill="#b87922"/><circle cx="146.8" cy="140.3" r="3.1" fill="#b87922"/><circle cx="188.3" cy="168.6" r="3.1" fill="#b87922"/><circle cx="188.3" cy="158.7" r="3.1" fill="#b87922"/><circle cx="229.7" cy="186.1" r="3.1" fill="#b87922"/><circle cx="229.7" cy="175.0" r="3.1" fill="#b87922"/><circle cx="271.2" cy="202.0" r="3.1" fill="#b87922"/><circle cx="271.2" cy="190.9" r="3.1" fill="#b87922"/><circle cx="312.6" cy="215.7" r="3.1" fill="#b87922"/><circle cx="312.6" cy="205.4" r="3.1" fill="#b87922"/><circle cx="354.1" cy="229.4" r="3.1" fill="#b87922"/><circle cx="354.1" cy="220.0" r="3.1" fill="#b87922"/><circle cx="395.6" cy="242.3" r="3.1" fill="#b87922"/><circle cx="395.6" cy="235.0" r="3.1" fill="#b87922"/><circle cx="437.1" cy="253.0" r="3.1" fill="#b87922"/><circle cx="437.1" cy="249.1" r="3.1" fill="#b87922"/><circle cx="478.7" cy="264.6" r="3.1" fill="#b87922"/><circle cx="478.7" cy="267.6" r="3.1" fill="#b87922"/><circle cx="520.1" cy="280.0" r="3.1" fill="#b87922"/><circle cx="520.2" cy="282.1" r="3.1" fill="#b87922"/><circle cx="561.7" cy="296.3" r="3.1" fill="#b87922"/><path d="M 64.00 64.43 L 64.00 62.71 L 68.02 83.29 L 68.04 80.29 L 72.19 92.29 L 72.19 88.43 L 76.31 94.00 L 76.32 99.14 L 80.44 104.29 L 80.45 98.71 L 84.59 109.00 L 84.59 102.14 L 105.36 125.71 L 105.37 117.57 L 126.10 138.14 L 126.11 128.71 L 146.83 149.29 L 146.84 139.43 L 188.25 169.86 L 188.25 159.14 L 229.69 177.57 L 229.70 188.29 L 271.13 204.57 L 271.14 195.14 L 312.58 220.43 L 312.59 211.43 L 354.05 228.57 L 354.07 235.43 L 395.60 250.00 L 395.60 244.86 L 437.10 265.43 L 437.10 262.43 L 478.65 281.71 L 478.65 280.00 L 520.14 298.86" fill="none" stroke="#b64b4b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="64.4" r="3.1" fill="#b64b4b"/><circle cx="64.0" cy="62.7" r="3.1" fill="#b64b4b"/><circle cx="68.0" cy="83.3" r="3.1" fill="#b64b4b"/><circle cx="68.0" cy="80.3" r="3.1" fill="#b64b4b"/><circle cx="72.2" cy="92.3" r="3.1" fill="#b64b4b"/><circle cx="72.2" cy="88.4" r="3.1" fill="#b64b4b"/><circle cx="76.3" cy="94.0" r="3.1" fill="#b64b4b"/><circle cx="76.3" cy="99.1" r="3.1" fill="#b64b4b"/><circle cx="80.4" cy="104.3" r="3.1" fill="#b64b4b"/><circle cx="80.4" cy="98.7" r="3.1" fill="#b64b4b"/><circle cx="84.6" cy="109.0" r="3.1" fill="#b64b4b"/><circle cx="84.6" cy="102.1" r="3.1" fill="#b64b4b"/><circle cx="105.4" cy="125.7" r="3.1" fill="#b64b4b"/><circle cx="105.4" cy="117.6" r="3.1" fill="#b64b4b"/><circle cx="126.1" cy="138.1" r="3.1" fill="#b64b4b"/><circle cx="126.1" cy="128.7" r="3.1" fill="#b64b4b"/><circle cx="146.8" cy="149.3" r="3.1" fill="#b64b4b"/><circle cx="146.8" cy="139.4" r="3.1" fill="#b64b4b"/><circle cx="188.2" cy="169.9" r="3.1" fill="#b64b4b"/><circle cx="188.3" cy="159.1" r="3.1" fill="#b64b4b"/><circle cx="229.7" cy="177.6" r="3.1" fill="#b64b4b"/><circle cx="229.7" cy="188.3" r="3.1" fill="#b64b4b"/><circle cx="271.1" cy="204.6" r="3.1" fill="#b64b4b"/><circle cx="271.1" cy="195.1" r="3.1" fill="#b64b4b"/><circle cx="312.6" cy="220.4" r="3.1" fill="#b64b4b"/><circle cx="312.6" cy="211.4" r="3.1" fill="#b64b4b"/><circle cx="354.0" cy="228.6" r="3.1" fill="#b64b4b"/><circle cx="354.1" cy="235.4" r="3.1" fill="#b64b4b"/><circle cx="395.6" cy="250.0" r="3.1" fill="#b64b4b"/><circle cx="395.6" cy="244.9" r="3.1" fill="#b64b4b"/><circle cx="437.1" cy="265.4" r="3.1" fill="#b64b4b"/><circle cx="437.1" cy="262.4" r="3.1" fill="#b64b4b"/><circle cx="478.6" cy="281.7" r="3.1" fill="#b64b4b"/><circle cx="478.6" cy="280.0" r="3.1" fill="#b64b4b"/><circle cx="520.1" cy="298.9" r="3.1" fill="#b64b4b"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#111827" stroke-width="2.5"/><text x="92" y="22" class="legend">0 h</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="237" y="22" class="legend">100 h</text></g><g><line x1="354" y1="18" x2="376" y2="18" stroke="#b87922" stroke-width="2.5"/><text x="382" y="22" class="legend">500 h</text></g><g><line x1="499" y1="18" x2="521" y2="18" stroke="#b64b4b" stroke-width="2.5"/><text x="527" y="22" class="legend">1000 h</text></g></svg><figcaption>Đường cong phân cực không nghỉ tại các mốc đại diện. Ba vùng loss được thấy qua độ tụt low-current, slope trung gian và độ cong high-current.</figcaption></figure>
+      </div>
+      <div>
+        <figure><svg viewBox="0 0 640 380" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="328" class="grid"/><line x1="173.6" y1="28" x2="173.6" y2="328" class="grid"/><line x1="283.2" y1="28" x2="283.2" y2="328" class="grid"/><line x1="392.8" y1="28" x2="392.8" y2="328" class="grid"/><line x1="502.4" y1="28" x2="502.4" y2="328" class="grid"/><line x1="612.0" y1="28" x2="612.0" y2="328" class="grid"/><line x1="64" y1="328.0" x2="612" y2="328.0" class="grid"/><line x1="64" y1="253.0" x2="612" y2="253.0" class="grid"/><line x1="64" y1="178.0" x2="612" y2="178.0" class="grid"/><line x1="64" y1="103.0" x2="612" y2="103.0" class="grid"/><line x1="64" y1="28.0" x2="612" y2="28.0" class="grid"/>
+    <line x1="64" y1="328" x2="612" y2="328" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="328" class="axis"/>
+    <text x="64.0" y="352" class="tick" text-anchor="middle">0</text><text x="173.6" y="352" class="tick" text-anchor="middle">13</text><text x="283.2" y="352" class="tick" text-anchor="middle">26</text><text x="392.8" y="352" class="tick" text-anchor="middle">40</text><text x="502.4" y="352" class="tick" text-anchor="middle">53</text><text x="612.0" y="352" class="tick" text-anchor="middle">66</text>
+    <text x="54" y="332.0" class="tick" text-anchor="end">0,30</text><text x="54" y="257.0" class="tick" text-anchor="end">0,48</text><text x="54" y="182.0" class="tick" text-anchor="end">0,65</text><text x="54" y="107.0" class="tick" text-anchor="end">0,83</text><text x="54" y="32.0" class="tick" text-anchor="end">1,00</text>
+    <text x="338" y="370" class="axis-label" text-anchor="middle">Current (A)</text>
+    <text x="18" y="178" class="axis-label" text-anchor="middle" transform="rotate(-90 18 178)">Cell voltage (V)</text>
+  <path d="M 64.00 58.86 L 64.00 57.57 L 68.02 76.43 L 68.03 73.86 L 72.19 85.00 L 72.19 81.57 L 76.31 86.71 L 76.31 91.00 L 80.43 90.57 L 80.45 95.71 L 84.59 99.57 L 84.60 93.57 L 105.37 114.14 L 105.37 108.57 L 126.11 116.71 L 126.11 124.00 L 146.84 133.43 L 146.85 124.43 L 188.28 151.00 L 188.29 139.00 L 229.70 152.71 L 229.72 166.43 L 271.12 166.43 L 271.15 181.86 L 312.58 180.57 L 312.60 197.29 L 354.08 212.71 L 354.09 196.43 L 395.63 213.14 L 395.64 229.00 L 437.10 245.29 L 437.13 232.86 L 478.67 263.71 L 478.67 255.14 L 520.14 279.57 L 520.15 286.00 L 561.67 306.57" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="58.9" r="3.1" fill="#1f5f8b"/><circle cx="64.0" cy="57.6" r="3.1" fill="#1f5f8b"/><circle cx="68.0" cy="76.4" r="3.1" fill="#1f5f8b"/><circle cx="68.0" cy="73.9" r="3.1" fill="#1f5f8b"/><circle cx="72.2" cy="85.0" r="3.1" fill="#1f5f8b"/><circle cx="72.2" cy="81.6" r="3.1" fill="#1f5f8b"/><circle cx="76.3" cy="86.7" r="3.1" fill="#1f5f8b"/><circle cx="76.3" cy="91.0" r="3.1" fill="#1f5f8b"/><circle cx="80.4" cy="90.6" r="3.1" fill="#1f5f8b"/><circle cx="80.4" cy="95.7" r="3.1" fill="#1f5f8b"/><circle cx="84.6" cy="99.6" r="3.1" fill="#1f5f8b"/><circle cx="84.6" cy="93.6" r="3.1" fill="#1f5f8b"/><circle cx="105.4" cy="114.1" r="3.1" fill="#1f5f8b"/><circle cx="105.4" cy="108.6" r="3.1" fill="#1f5f8b"/><circle cx="126.1" cy="116.7" r="3.1" fill="#1f5f8b"/><circle cx="126.1" cy="124.0" r="3.1" fill="#1f5f8b"/><circle cx="146.8" cy="133.4" r="3.1" fill="#1f5f8b"/><circle cx="146.8" cy="124.4" r="3.1" fill="#1f5f8b"/><circle cx="188.3" cy="151.0" r="3.1" fill="#1f5f8b"/><circle cx="188.3" cy="139.0" r="3.1" fill="#1f5f8b"/><circle cx="229.7" cy="152.7" r="3.1" fill="#1f5f8b"/><circle cx="229.7" cy="166.4" r="3.1" fill="#1f5f8b"/><circle cx="271.1" cy="166.4" r="3.1" fill="#1f5f8b"/><circle cx="271.2" cy="181.9" r="3.1" fill="#1f5f8b"/><circle cx="312.6" cy="180.6" r="3.1" fill="#1f5f8b"/><circle cx="312.6" cy="197.3" r="3.1" fill="#1f5f8b"/><circle cx="354.1" cy="212.7" r="3.1" fill="#1f5f8b"/><circle cx="354.1" cy="196.4" r="3.1" fill="#1f5f8b"/><circle cx="395.6" cy="213.1" r="3.1" fill="#1f5f8b"/><circle cx="395.6" cy="229.0" r="3.1" fill="#1f5f8b"/><circle cx="437.1" cy="245.3" r="3.1" fill="#1f5f8b"/><circle cx="437.1" cy="232.9" r="3.1" fill="#1f5f8b"/><circle cx="478.7" cy="263.7" r="3.1" fill="#1f5f8b"/><circle cx="478.7" cy="255.1" r="3.1" fill="#1f5f8b"/><circle cx="520.1" cy="279.6" r="3.1" fill="#1f5f8b"/><circle cx="520.2" cy="286.0" r="3.1" fill="#1f5f8b"/><circle cx="561.7" cy="306.6" r="3.1" fill="#1f5f8b"/><path d="M 64.00 51.14 L 64.00 49.43 L 68.01 70.43 L 68.04 66.57 L 72.19 79.00 L 72.19 75.14 L 76.31 85.00 L 76.31 80.71 L 80.43 90.14 L 80.45 85.43 L 84.60 94.43 L 84.60 88.86 L 105.36 103.86 L 105.37 109.00 L 126.11 119.29 L 126.11 112.86 L 146.83 127.43 L 146.84 120.57 L 188.26 133.00 L 188.27 142.00 L 229.69 145.00 L 229.70 155.29 L 271.14 156.57 L 271.16 168.14 L 312.57 168.14 L 312.59 181.43 L 354.06 195.57 L 354.07 181.00 L 395.60 195.14 L 395.62 210.14 L 437.10 211.43 L 437.13 225.57 L 478.64 229.43 L 478.67 243.14 L 520.14 252.14 L 520.14 265.43 L 561.67 285.14 L 561.71 275.29 L 603.19 306.57" fill="none" stroke="#5b8f57" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="51.1" r="3.1" fill="#5b8f57"/><circle cx="64.0" cy="49.4" r="3.1" fill="#5b8f57"/><circle cx="68.0" cy="70.4" r="3.1" fill="#5b8f57"/><circle cx="68.0" cy="66.6" r="3.1" fill="#5b8f57"/><circle cx="72.2" cy="79.0" r="3.1" fill="#5b8f57"/><circle cx="72.2" cy="75.1" r="3.1" fill="#5b8f57"/><circle cx="76.3" cy="85.0" r="3.1" fill="#5b8f57"/><circle cx="76.3" cy="80.7" r="3.1" fill="#5b8f57"/><circle cx="80.4" cy="90.1" r="3.1" fill="#5b8f57"/><circle cx="80.4" cy="85.4" r="3.1" fill="#5b8f57"/><circle cx="84.6" cy="94.4" r="3.1" fill="#5b8f57"/><circle cx="84.6" cy="88.9" r="3.1" fill="#5b8f57"/><circle cx="105.4" cy="103.9" r="3.1" fill="#5b8f57"/><circle cx="105.4" cy="109.0" r="3.1" fill="#5b8f57"/><circle cx="126.1" cy="119.3" r="3.1" fill="#5b8f57"/><circle cx="126.1" cy="112.9" r="3.1" fill="#5b8f57"/><circle cx="146.8" cy="127.4" r="3.1" fill="#5b8f57"/><circle cx="146.8" cy="120.6" r="3.1" fill="#5b8f57"/><circle cx="188.3" cy="133.0" r="3.1" fill="#5b8f57"/><circle cx="188.3" cy="142.0" r="3.1" fill="#5b8f57"/><circle cx="229.7" cy="145.0" r="3.1" fill="#5b8f57"/><circle cx="229.7" cy="155.3" r="3.1" fill="#5b8f57"/><circle cx="271.1" cy="156.6" r="3.1" fill="#5b8f57"/><circle cx="271.2" cy="168.1" r="3.1" fill="#5b8f57"/><circle cx="312.6" cy="168.1" r="3.1" fill="#5b8f57"/><circle cx="312.6" cy="181.4" r="3.1" fill="#5b8f57"/><circle cx="354.1" cy="195.6" r="3.1" fill="#5b8f57"/><circle cx="354.1" cy="181.0" r="3.1" fill="#5b8f57"/><circle cx="395.6" cy="195.1" r="3.1" fill="#5b8f57"/><circle cx="395.6" cy="210.1" r="3.1" fill="#5b8f57"/><circle cx="437.1" cy="211.4" r="3.1" fill="#5b8f57"/><circle cx="437.1" cy="225.6" r="3.1" fill="#5b8f57"/><circle cx="478.6" cy="229.4" r="3.1" fill="#5b8f57"/><circle cx="478.7" cy="243.1" r="3.1" fill="#5b8f57"/><circle cx="520.1" cy="252.1" r="3.1" fill="#5b8f57"/><circle cx="520.1" cy="265.4" r="3.1" fill="#5b8f57"/><circle cx="561.7" cy="285.1" r="3.1" fill="#5b8f57"/><circle cx="561.7" cy="275.3" r="3.1" fill="#5b8f57"/><circle cx="603.2" cy="306.6" r="3.1" fill="#5b8f57"/><path d="M 64.00 64.43 L 64.00 62.71 L 68.02 83.29 L 68.04 80.29 L 72.19 92.29 L 72.19 88.43 L 76.31 94.00 L 76.32 99.14 L 80.44 104.29 L 80.45 98.71 L 84.59 109.00 L 84.59 102.14 L 105.36 125.71 L 105.37 117.57 L 126.10 138.14 L 126.11 128.71 L 146.83 149.29 L 146.84 139.43 L 188.25 169.86 L 188.25 159.14 L 229.69 177.57 L 229.70 188.29 L 271.13 204.57 L 271.14 195.14 L 312.58 220.43 L 312.59 211.43 L 354.05 228.57 L 354.07 235.43 L 395.60 250.00 L 395.60 244.86 L 437.10 265.43 L 437.10 262.43 L 478.65 281.71 L 478.65 280.00 L 520.14 298.86" fill="none" stroke="#b64b4b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="64.4" r="3.1" fill="#b64b4b"/><circle cx="64.0" cy="62.7" r="3.1" fill="#b64b4b"/><circle cx="68.0" cy="83.3" r="3.1" fill="#b64b4b"/><circle cx="68.0" cy="80.3" r="3.1" fill="#b64b4b"/><circle cx="72.2" cy="92.3" r="3.1" fill="#b64b4b"/><circle cx="72.2" cy="88.4" r="3.1" fill="#b64b4b"/><circle cx="76.3" cy="94.0" r="3.1" fill="#b64b4b"/><circle cx="76.3" cy="99.1" r="3.1" fill="#b64b4b"/><circle cx="80.4" cy="104.3" r="3.1" fill="#b64b4b"/><circle cx="80.4" cy="98.7" r="3.1" fill="#b64b4b"/><circle cx="84.6" cy="109.0" r="3.1" fill="#b64b4b"/><circle cx="84.6" cy="102.1" r="3.1" fill="#b64b4b"/><circle cx="105.4" cy="125.7" r="3.1" fill="#b64b4b"/><circle cx="105.4" cy="117.6" r="3.1" fill="#b64b4b"/><circle cx="126.1" cy="138.1" r="3.1" fill="#b64b4b"/><circle cx="126.1" cy="128.7" r="3.1" fill="#b64b4b"/><circle cx="146.8" cy="149.3" r="3.1" fill="#b64b4b"/><circle cx="146.8" cy="139.4" r="3.1" fill="#b64b4b"/><circle cx="188.2" cy="169.9" r="3.1" fill="#b64b4b"/><circle cx="188.3" cy="159.1" r="3.1" fill="#b64b4b"/><circle cx="229.7" cy="177.6" r="3.1" fill="#b64b4b"/><circle cx="229.7" cy="188.3" r="3.1" fill="#b64b4b"/><circle cx="271.1" cy="204.6" r="3.1" fill="#b64b4b"/><circle cx="271.1" cy="195.1" r="3.1" fill="#b64b4b"/><circle cx="312.6" cy="220.4" r="3.1" fill="#b64b4b"/><circle cx="312.6" cy="211.4" r="3.1" fill="#b64b4b"/><circle cx="354.0" cy="228.6" r="3.1" fill="#b64b4b"/><circle cx="354.1" cy="235.4" r="3.1" fill="#b64b4b"/><circle cx="395.6" cy="250.0" r="3.1" fill="#b64b4b"/><circle cx="395.6" cy="244.9" r="3.1" fill="#b64b4b"/><circle cx="437.1" cy="265.4" r="3.1" fill="#b64b4b"/><circle cx="437.1" cy="262.4" r="3.1" fill="#b64b4b"/><circle cx="478.6" cy="281.7" r="3.1" fill="#b64b4b"/><circle cx="478.6" cy="280.0" r="3.1" fill="#b64b4b"/><circle cx="520.1" cy="298.9" r="3.1" fill="#b64b4b"/><path d="M 64.00 58.86 L 64.00 57.14 L 68.01 79.86 L 68.03 76.86 L 72.19 88.86 L 72.19 85.43 L 76.31 94.86 L 76.32 91.43 L 80.43 99.14 L 80.44 95.71 L 84.59 103.00 L 84.60 98.29 L 105.36 115.43 L 105.36 112.43 L 126.09 124.00 L 126.10 121.00 L 146.82 132.14 L 146.84 128.71 L 188.27 148.43 L 188.29 142.86 L 229.69 166.00 L 229.70 157.00 L 271.11 171.57 L 271.12 183.14 L 312.57 187.86 L 312.59 201.14 L 354.05 218.71 L 354.07 205.43 L 395.59 223.00 L 395.64 236.29 L 437.10 251.29 L 437.10 241.86 L 478.65 268.86 L 478.69 259.86 L 520.14 279.14 L 520.14 286.00 L 561.66 300.57" fill="none" stroke="#b87922" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="58.9" r="3.1" fill="#b87922"/><circle cx="64.0" cy="57.1" r="3.1" fill="#b87922"/><circle cx="68.0" cy="79.9" r="3.1" fill="#b87922"/><circle cx="68.0" cy="76.9" r="3.1" fill="#b87922"/><circle cx="72.2" cy="88.9" r="3.1" fill="#b87922"/><circle cx="72.2" cy="85.4" r="3.1" fill="#b87922"/><circle cx="76.3" cy="94.9" r="3.1" fill="#b87922"/><circle cx="76.3" cy="91.4" r="3.1" fill="#b87922"/><circle cx="80.4" cy="99.1" r="3.1" fill="#b87922"/><circle cx="80.4" cy="95.7" r="3.1" fill="#b87922"/><circle cx="84.6" cy="103.0" r="3.1" fill="#b87922"/><circle cx="84.6" cy="98.3" r="3.1" fill="#b87922"/><circle cx="105.4" cy="115.4" r="3.1" fill="#b87922"/><circle cx="105.4" cy="112.4" r="3.1" fill="#b87922"/><circle cx="126.1" cy="124.0" r="3.1" fill="#b87922"/><circle cx="126.1" cy="121.0" r="3.1" fill="#b87922"/><circle cx="146.8" cy="132.1" r="3.1" fill="#b87922"/><circle cx="146.8" cy="128.7" r="3.1" fill="#b87922"/><circle cx="188.3" cy="148.4" r="3.1" fill="#b87922"/><circle cx="188.3" cy="142.9" r="3.1" fill="#b87922"/><circle cx="229.7" cy="166.0" r="3.1" fill="#b87922"/><circle cx="229.7" cy="157.0" r="3.1" fill="#b87922"/><circle cx="271.1" cy="171.6" r="3.1" fill="#b87922"/><circle cx="271.1" cy="183.1" r="3.1" fill="#b87922"/><circle cx="312.6" cy="187.9" r="3.1" fill="#b87922"/><circle cx="312.6" cy="201.1" r="3.1" fill="#b87922"/><circle cx="354.0" cy="218.7" r="3.1" fill="#b87922"/><circle cx="354.1" cy="205.4" r="3.1" fill="#b87922"/><circle cx="395.6" cy="223.0" r="3.1" fill="#b87922"/><circle cx="395.6" cy="236.3" r="3.1" fill="#b87922"/><circle cx="437.1" cy="251.3" r="3.1" fill="#b87922"/><circle cx="437.1" cy="241.9" r="3.1" fill="#b87922"/><circle cx="478.7" cy="268.9" r="3.1" fill="#b87922"/><circle cx="478.7" cy="259.9" r="3.1" fill="#b87922"/><circle cx="520.1" cy="279.1" r="3.1" fill="#b87922"/><circle cx="520.1" cy="286.0" r="3.1" fill="#b87922"/><circle cx="561.7" cy="300.6" r="3.1" fill="#b87922"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="92" y="22" class="legend">Không nghỉ 100 h</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#5b8f57" stroke-width="2.5"/><text x="237" y="22" class="legend">Sau nghỉ 100 h</text></g><g><line x1="354" y1="18" x2="376" y2="18" stroke="#b64b4b" stroke-width="2.5"/><text x="382" y="22" class="legend">Không nghỉ 1000 h</text></g><g><line x1="499" y1="18" x2="521" y2="18" stroke="#b87922" stroke-width="2.5"/><text x="527" y="22" class="legend">Sau nghỉ 1000 h</text></g></svg><figcaption>So sánh trước/sau nghỉ 12 h ở 100 h và 1000 h. Recovery thể hiện thành phần suy giảm thuận nghịch.</figcaption></figure>
+      </div>
+    </div>
+    <div class="table-caption">Descriptors từ polarization curve không nghỉ.</div>
+    
+    <table class="compact">
+      <thead><tr><th>Aging</th><th>OCV</th><th>ηact proxy @0.5A (mV)</th><th>Rohm proxy (mΩ)</th><th>V@10A</th><th>Pmax (W)</th><th>I@Pmax (A)</th></tr></thead>
+      <tbody>
+        <tr><td>0 h</td><td>0,951</td><td>30,7</td><td>12,2</td><td>0,802</td><td>27,42</td><td>49,9</td></tr><tr><td>100 h</td><td>0,928</td><td>35,8</td><td>12,2</td><td>0,775</td><td>23,47</td><td>49,9</td></tr><tr><td>200 h</td><td>0,922</td><td>35,0</td><td>14,1</td><td>0,753</td><td>22,78</td><td>49,9</td></tr><tr><td>300 h</td><td>0,922</td><td>35,9</td><td>13,5</td><td>0,753</td><td>22,31</td><td>49,9</td></tr><tr><td>400 h</td><td>0,921</td><td>39,8</td><td>13,9</td><td>0,748</td><td>22,00</td><td>49,9</td></tr><tr><td>500 h</td><td>0,920</td><td>39,8</td><td>14,8</td><td>0,738</td><td>22,65</td><td>54,9</td></tr><tr><td>600 h</td><td>0,920</td><td>39,9</td><td>14,4</td><td>0,739</td><td>22,26</td><td>54,9</td></tr><tr><td>700 h</td><td>0,916</td><td>38,8</td><td>14,8</td><td>0,731</td><td>21,02</td><td>49,9</td></tr><tr><td>800 h</td><td>0,914</td><td>38,8</td><td>14,4</td><td>0,713</td><td>20,32</td><td>49,9</td></tr><tr><td>900 h</td><td>0,916</td><td>39,8</td><td>13,3</td><td>0,739</td><td>20,81</td><td>49,9</td></tr><tr><td>1000 h</td><td>0,915</td><td>37,8</td><td>14,2</td><td>0,740</td><td>20,59</td><td>49,9</td></tr>
+      </tbody>
+    </table>
+  
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>8. Loss-Region Interpretation and Rest Recovery</h2>
+      
+    <div class="col-60-40">
+      <div>
+        <figure><svg viewBox="0 0 720 390" role="img" class="chart-svg"><line x1="64.0" y1="28" x2="64.0" y2="338" class="grid"/><line x1="189.6" y1="28" x2="189.6" y2="338" class="grid"/><line x1="315.2" y1="28" x2="315.2" y2="338" class="grid"/><line x1="440.8" y1="28" x2="440.8" y2="338" class="grid"/><line x1="566.4" y1="28" x2="566.4" y2="338" class="grid"/><line x1="692.0" y1="28" x2="692.0" y2="338" class="grid"/><line x1="64" y1="338.0" x2="692" y2="338.0" class="grid"/><line x1="64" y1="260.5" x2="692" y2="260.5" class="grid"/><line x1="64" y1="183.0" x2="692" y2="183.0" class="grid"/><line x1="64" y1="105.5" x2="692" y2="105.5" class="grid"/><line x1="64" y1="28.0" x2="692" y2="28.0" class="grid"/>
+    <line x1="64" y1="338" x2="692" y2="338" class="axis"/>
+    <line x1="64" y1="28" x2="64" y2="338" class="axis"/>
+    <text x="64.0" y="362" class="tick" text-anchor="middle">0</text><text x="189.6" y="362" class="tick" text-anchor="middle">200</text><text x="315.2" y="362" class="tick" text-anchor="middle">400</text><text x="440.8" y="362" class="tick" text-anchor="middle">600</text><text x="566.4" y="362" class="tick" text-anchor="middle">800</text><text x="692.0" y="362" class="tick" text-anchor="middle">1.000</text>
+    <text x="54" y="342.0" class="tick" text-anchor="end">10</text><text x="54" y="264.5" class="tick" text-anchor="end">15</text><text x="54" y="187.0" class="tick" text-anchor="end">20</text><text x="54" y="109.5" class="tick" text-anchor="end">25</text><text x="54" y="32.0" class="tick" text-anchor="end">30</text>
+    <text x="378" y="380" class="axis-label" text-anchor="middle">Aging label (h)</text>
+    <text x="18" y="183" class="axis-label" text-anchor="middle" transform="rotate(-90 18 183)">Pmax (W) / R proxy (mΩ)</text>
+  <path d="M 64.00 68.07 L 126.80 129.22 L 189.60 139.86 L 252.40 147.27 L 315.20 152.00 L 378.00 141.89 L 440.80 147.95 L 503.60 167.14 L 566.40 178.07 L 629.20 170.48 L 692.00 173.81" fill="none" stroke="#1f5f8b" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="68.1" r="3.1" fill="#1f5f8b"/><circle cx="126.8" cy="129.2" r="3.1" fill="#1f5f8b"/><circle cx="189.6" cy="139.9" r="3.1" fill="#1f5f8b"/><circle cx="252.4" cy="147.3" r="3.1" fill="#1f5f8b"/><circle cx="315.2" cy="152.0" r="3.1" fill="#1f5f8b"/><circle cx="378.0" cy="141.9" r="3.1" fill="#1f5f8b"/><circle cx="440.8" cy="148.0" r="3.1" fill="#1f5f8b"/><circle cx="503.6" cy="167.1" r="3.1" fill="#1f5f8b"/><circle cx="566.4" cy="178.1" r="3.1" fill="#1f5f8b"/><circle cx="629.2" cy="170.5" r="3.1" fill="#1f5f8b"/><circle cx="692.0" cy="173.8" r="3.1" fill="#1f5f8b"/><path d="M 64.00 304.02 L 126.80 303.71 L 189.60 273.70 L 252.40 283.41 L 315.20 277.88 L 378.00 264.24 L 440.80 269.54 L 503.60 263.52 L 566.40 269.73 L 629.20 286.20 L 692.00 273.58" fill="none" stroke="#b87922" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"/><circle cx="64.0" cy="304.0" r="3.1" fill="#b87922"/><circle cx="126.8" cy="303.7" r="3.1" fill="#b87922"/><circle cx="189.6" cy="273.7" r="3.1" fill="#b87922"/><circle cx="252.4" cy="283.4" r="3.1" fill="#b87922"/><circle cx="315.2" cy="277.9" r="3.1" fill="#b87922"/><circle cx="378.0" cy="264.2" r="3.1" fill="#b87922"/><circle cx="440.8" cy="269.5" r="3.1" fill="#b87922"/><circle cx="503.6" cy="263.5" r="3.1" fill="#b87922"/><circle cx="566.4" cy="269.7" r="3.1" fill="#b87922"/><circle cx="629.2" cy="286.2" r="3.1" fill="#b87922"/><circle cx="692.0" cy="273.6" r="3.1" fill="#b87922"/><g><line x1="64" y1="18" x2="86" y2="18" stroke="#1f5f8b" stroke-width="2.5"/><text x="92" y="22" class="legend">Pmax</text></g><g><line x1="209" y1="18" x2="231" y2="18" stroke="#b87922" stroke-width="2.5"/><text x="237" y="22" class="legend">R proxy</text></g></svg><figcaption>Pmax và ohmic proxy theo lifecycle. Pmax giảm từ 27,42 W xuống 20,59 W; ohmic proxy tăng ở nhiều mốc giữa lifecycle.</figcaption></figure>
+      </div>
+      <div>
+        <h3>Three loss regions</h3>
+        <ul>
+          <li><strong>Activation region:</strong> OCV-to-low-current drop tăng theo tuổi, gợi ý giảm động học điện cực hoặc thay đổi ECSA/catalyst utilization.</li>
+          <li><strong>Ohmic region:</strong> slope vùng 1-8 A được dùng như proxy cho điện trở hiệu dụng.</li>
+          <li><strong>Concentration region:</strong> high-current curvature và Pmax suy giảm, phản ánh hạn chế mass transport/water flooding/dry-out tùy điều kiện.</li>
+        </ul>
+        <div class="table-caption">Rest recovery descriptor.</div>
+        
+    <table class="compact">
+      <thead><tr><th>Aging</th><th>OCV no rest</th><th>OCV after rest</th><th>Pmax no rest</th><th>Pmax after rest</th><th>Pmax recovery</th></tr></thead>
+      <tbody>
+        <tr><td>100 h</td><td>0,928</td><td>0,946</td><td>23,47</td><td>26,48</td><td>12,8%</td></tr><tr><td>1000 h</td><td>0,915</td><td>0,928</td><td>20,59</td><td>22,93</td><td>11,4%</td></tr>
+      </tbody>
+    </table>
+  
+        <p>
+          Recovery sau nghỉ không nên bị xem là noise. Nó là thông tin vật lý về thành phần reversible degradation,
+          hữu ích để tách irreversible aging khỏi điều kiện hydration và transient operation.
+        </p>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>9. Correlation, Features, and Anomaly Signals</h2>
+      
+    <div class="two-col">
+      <div>
+        <figure><svg viewBox="0 0 640 540" role="img" class="chart-svg">
+            <rect x="104" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="143.27272727272728" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(192,101,98)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">-0,97</text>
+          
+            <rect x="182.54545454545456" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(191,101,98)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">-0,98</text>
+          
+            <rect x="221.8181818181818" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,230,227)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(210,146,143)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="#182536">-0,67</text>
+          
+            <rect x="300.3636363636364" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(226,187,184)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(227,190,187)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(206,136,133)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">-0,74</text>
+          
+            <rect x="418.1818181818182" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(195,109,106)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">-0,92</text>
+          
+            <rect x="457.45454545454544" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(195,109,106)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="102.63636363636364" text-anchor="middle" class="hm-value" fill="white">-0,92</text>
+          
+            <rect x="496.72727272727275" y="80" width="39.27272727272727" height="39.27272727272727" fill="rgb(245,234,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(192,101,98)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">-0,97</text>
+          
+            <rect x="143.27272727272728" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="182.54545454545456" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(78,144,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">0,99</text>
+          
+            <rect x="221.8181818181818" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(142,184,226)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="#182536">0,61</text>
+          
+            <rect x="300.3636363636364" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(181,208,235)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(170,201,232)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(110,164,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">0,80</text>
+          
+            <rect x="418.1818181818182" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(80,145,211)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">0,98</text>
+          
+            <rect x="457.45454545454544" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(80,145,211)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="141.9090909090909" text-anchor="middle" class="hm-value" fill="white">0,98</text>
+          
+            <rect x="496.72727272727275" y="119.27272727272728" width="39.27272727272727" height="39.27272727272727" fill="rgb(246,248,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(191,101,98)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">-0,98</text>
+          
+            <rect x="143.27272727272728" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(78,144,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">0,99</text>
+          
+            <rect x="182.54545454545456" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="221.8181818181818" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(227,236,245)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(138,182,225)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="#182536">0,63</text>
+          
+            <rect x="300.3636363636364" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(186,211,236)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(111,165,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">0,79</text>
+          
+            <rect x="418.1818181818182" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(85,148,212)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">0,95</text>
+          
+            <rect x="457.45454545454544" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(85,148,212)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="181.1818181818182" text-anchor="middle" class="hm-value" fill="white">0,95</text>
+          
+            <rect x="496.72727272727275" y="158.54545454545456" width="39.27272727272727" height="39.27272727272727" fill="rgb(249,244,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,230,227)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="143.27272727272728" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="182.54545454545456" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(227,236,245)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="221.8181818181818" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="241.45454545454544" y="220.45454545454544" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="261.0909090909091" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(217,230,243)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="300.3636363636364" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(237,242,248)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(244,247,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(237,242,248)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="418.1818181818182" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="457.45454545454544" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="496.72727272727275" y="197.8181818181818" width="39.27272727272727" height="39.27272727272727" fill="rgb(241,245,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(210,146,143)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="#182536">-0,67</text>
+          
+            <rect x="143.27272727272728" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(142,184,226)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="#182536">0,61</text>
+          
+            <rect x="182.54545454545456" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(138,182,225)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="#182536">0,63</text>
+          
+            <rect x="221.8181818181818" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(217,230,243)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="300.3636363636364" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(222,233,244)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(240,244,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(179,207,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="418.1818181818182" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(149,188,227)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="#182536">0,57</text>
+          
+            <rect x="457.45454545454544" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(149,188,227)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="259.72727272727275" text-anchor="middle" class="hm-value" fill="#182536">0,57</text>
+          
+            <rect x="496.72727272727275" y="237.0909090909091" width="39.27272727272727" height="39.27272727272727" fill="rgb(246,248,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(226,187,184)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="143.27272727272728" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(181,208,235)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="182.54545454545456" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(186,211,236)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="221.8181818181818" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(237,242,248)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(222,233,244)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="300.3636363636364" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="320" y="299" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="339.6363636363636" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(206,223,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(185,210,236)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="418.1818181818182" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="457.45454545454544" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="496.72727272727275" y="276.3636363636364" width="39.27272727272727" height="39.27272727272727" fill="rgb(145,185,226)" stroke="#ffffff" stroke-width="1"/>
+            <text x="516.3636363636364" y="299" text-anchor="middle" class="hm-value" fill="#182536">0,60</text>
+          
+            <rect x="104" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(227,190,187)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="143.27272727272728" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(170,201,232)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="182.54545454545456" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="221.8181818181818" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(244,247,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(240,244,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="300.3636363636364" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(206,223,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="359.27272727272725" y="338.27272727272725" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="378.90909090909093" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(176,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="418.1818181818182" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(164,197,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="457.45454545454544" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(164,197,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="496.72727272727275" y="315.6363636363636" width="39.27272727272727" height="39.27272727272727" fill="rgb(249,244,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(206,136,133)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">-0,74</text>
+          
+            <rect x="143.27272727272728" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(110,164,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">0,80</text>
+          
+            <rect x="182.54545454545456" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(111,165,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">0,79</text>
+          
+            <rect x="221.8181818181818" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(237,242,248)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(179,207,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="300.3636363636364" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(185,210,236)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(176,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="418.1818181818182" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(108,163,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">0,81</text>
+          
+            <rect x="457.45454545454544" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(108,163,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="377.54545454545456" text-anchor="middle" class="hm-value" fill="white">0,81</text>
+          
+            <rect x="496.72727272727275" y="354.90909090909093" width="39.27272727272727" height="39.27272727272727" fill="rgb(250,246,243)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(195,109,106)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">-0,92</text>
+          
+            <rect x="143.27272727272728" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(80,145,211)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">0,98</text>
+          
+            <rect x="182.54545454545456" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(85,148,212)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">0,95</text>
+          
+            <rect x="221.8181818181818" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(149,188,227)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="#182536">0,57</text>
+          
+            <rect x="300.3636363636364" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(164,197,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(108,163,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">0,81</text>
+          
+            <rect x="418.1818181818182" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="457.45454545454544" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="416.8181818181818" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="496.72727272727275" y="394.1818181818182" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,246,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(195,109,106)" stroke="#ffffff" stroke-width="1"/>
+            <text x="123.63636363636364" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">-0,92</text>
+          
+            <rect x="143.27272727272728" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(80,145,211)" stroke="#ffffff" stroke-width="1"/>
+            <text x="162.9090909090909" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">0,98</text>
+          
+            <rect x="182.54545454545456" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(85,148,212)" stroke="#ffffff" stroke-width="1"/>
+            <text x="202.1818181818182" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">0,95</text>
+          
+            <rect x="221.8181818181818" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(228,237,246)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(149,188,227)" stroke="#ffffff" stroke-width="1"/>
+            <text x="280.72727272727275" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="#182536">0,57</text>
+          
+            <rect x="300.3636363636364" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(177,205,234)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="339.6363636363636" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(164,197,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(108,163,218)" stroke="#ffffff" stroke-width="1"/>
+            <text x="398.54545454545456" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">0,81</text>
+          
+            <rect x="418.1818181818182" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="437.8181818181818" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="457.45454545454544" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="477.09090909090907" y="456.09090909090907" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          
+            <rect x="496.72727272727275" y="433.45454545454544" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,246,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="104" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(245,234,231)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="143.27272727272728" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(246,248,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="182.54545454545456" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(249,244,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="221.8181818181818" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(241,245,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="261.0909090909091" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(246,248,250)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="300.3636363636364" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(145,185,226)" stroke="#ffffff" stroke-width="1"/>
+            <text x="320" y="495.3636363636364" text-anchor="middle" class="hm-value" fill="#182536">0,60</text>
+          
+            <rect x="339.6363636363636" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(249,244,241)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="378.90909090909093" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(250,246,243)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="418.1818181818182" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,246,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="457.45454545454544" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(243,246,249)" stroke="#ffffff" stroke-width="1"/>
+            
+          
+            <rect x="496.72727272727275" y="472.72727272727275" width="39.27272727272727" height="39.27272727272727" fill="rgb(76,143,210)" stroke="#ffffff" stroke-width="1"/>
+            <text x="516.3636363636364" y="495.3636363636364" text-anchor="middle" class="hm-value" fill="white">1,00</text>
+          <text x="123.63636363636364" y="70" class="tick" text-anchor="start" transform="rotate(-45 123.63636363636364 70)">V</text><text x="162.9090909090909" y="70" class="tick" text-anchor="start" transform="rotate(-45 162.9090909090909 70)">I</text><text x="202.1818181818182" y="70" class="tick" text-anchor="start" transform="rotate(-45 202.1818181818182 70)">P</text><text x="241.45454545454544" y="70" class="tick" text-anchor="start" transform="rotate(-45 241.45454545454544 70)">P_an</text><text x="280.72727272727275" y="70" class="tick" text-anchor="start" transform="rotate(-45 280.72727272727275 70)">P_ca</text><text x="320" y="70" class="tick" text-anchor="start" transform="rotate(-45 320 70)">T_end</text><text x="359.27272727272725" y="70" class="tick" text-anchor="start" transform="rotate(-45 359.27272727272725 70)">T_an</text><text x="398.54545454545456" y="70" class="tick" text-anchor="start" transform="rotate(-45 398.54545454545456 70)">T_ca</text><text x="437.8181818181818" y="70" class="tick" text-anchor="start" transform="rotate(-45 437.8181818181818 70)">F_an</text><text x="477.09090909090907" y="70" class="tick" text-anchor="start" transform="rotate(-45 477.09090909090907 70)">F_ca</text><text x="516.3636363636364" y="70" class="tick" text-anchor="start" transform="rotate(-45 516.3636363636364 70)">Aging</text><text x="96" y="103.63636363636364" class="tick" text-anchor="end">V</text><text x="96" y="142.9090909090909" class="tick" text-anchor="end">I</text><text x="96" y="182.1818181818182" class="tick" text-anchor="end">P</text><text x="96" y="221.45454545454544" class="tick" text-anchor="end">P_an</text><text x="96" y="260.72727272727275" class="tick" text-anchor="end">P_ca</text><text x="96" y="300" class="tick" text-anchor="end">T_end</text><text x="96" y="339.27272727272725" class="tick" text-anchor="end">T_an</text><text x="96" y="378.54545454545456" class="tick" text-anchor="end">T_ca</text><text x="96" y="417.8181818181818" class="tick" text-anchor="end">F_an</text><text x="96" y="457.09090909090907" class="tick" text-anchor="end">F_ca</text><text x="96" y="496.3636363636364" class="tick" text-anchor="end">Aging</text></svg><figcaption>Correlation matrix trên mẫu hệ thống 201.649 điểm. Tương quan phản ánh cả quan hệ vật lý lẫn coupling do control profile.</figcaption></figure>
+      </div>
+      <div>
+        <figure>
+    <svg viewBox="0 0 640 390" role="img" class="chart-svg">
+      <line x1="180.0" y1="22" x2="180.0" y2="342" class="grid"/><line x1="288.0" y1="22" x2="288.0" y2="342" class="grid"/><line x1="396.0" y1="22" x2="396.0" y2="342" class="grid"/><line x1="504.0" y1="22" x2="504.0" y2="342" class="grid"/><line x1="612.0" y1="22" x2="612.0" y2="342" class="grid"/>
+      <line x1="592.4" y1="22" x2="592.4" y2="342" class="axis"/>
+      
+        <text x="170" y="41.199999999999996" class="tick" text-anchor="end">Công suất</text>
+        <rect x="199.6" y="27.8" width="392.7" height="16.6" fill="#b64b4b"/>
+        <text x="193.63636363636363" y="41.199999999999996" class="small-value" text-anchor="end">-0,98</text>
+      
+        <text x="170" y="73.2" class="tick" text-anchor="end">Dòng điện</text>
+        <rect x="201.8" y="59.8" width="390.5" height="16.6" fill="#b64b4b"/>
+        <text x="195.8175767420546" y="73.2" class="small-value" text-anchor="end">-0,97</text>
+      
+        <text x="170" y="105.2" class="tick" text-anchor="end">Tổng lưu lượng cathode</text>
+        <rect x="222.2" y="91.8" width="370.2" height="16.6" fill="#b64b4b"/>
+        <text x="216.20515468437296" y="105.2" class="small-value" text-anchor="end">-0,92</text>
+      
+        <text x="170" y="137.20000000000002" class="tick" text-anchor="end">Tổng lưu lượng anode</text>
+        <rect x="222.4" y="123.8" width="370.0" height="16.6" fill="#b64b4b"/>
+        <text x="216.3910582264341" y="137.20000000000002" class="small-value" text-anchor="end">-0,92</text>
+      
+        <text x="170" y="169.2" class="tick" text-anchor="end">Nhiệt độ cathode vào</text>
+        <rect x="294.3" y="155.8" width="298.1" height="16.6" fill="#b64b4b"/>
+        <text x="288.2551051882887" y="169.2" class="small-value" text-anchor="end">-0,74</text>
+      
+        <text x="170" y="201.2" class="tick" text-anchor="end">Áp suất cathode vào</text>
+        <rect x="322.0" y="187.8" width="270.3" height="16.6" fill="#b64b4b"/>
+        <text x="316.02238551201765" y="201.2" class="small-value" text-anchor="end">-0,67</text>
+      
+        <text x="170" y="233.2" class="tick" text-anchor="end">Nhiệt độ endplate anode</text>
+        <rect x="430.6" y="219.8" width="161.7" height="16.6" fill="#b64b4b"/>
+        <text x="424.6441337145176" y="233.2" class="small-value" text-anchor="end">-0,40</text>
+      
+        <text x="170" y="265.2" class="tick" text-anchor="end">Nhiệt độ anode vào</text>
+        <rect x="438.5" y="251.8" width="153.9" height="16.6" fill="#b64b4b"/>
+        <text x="432.50405653320877" y="265.2" class="small-value" text-anchor="end">-0,38</text>
+      
+        <text x="170" y="297.2" class="tick" text-anchor="end">Áp suất anode vào</text>
+        <rect x="546.7" y="283.8" width="45.7" height="16.6" fill="#b64b4b"/>
+        <text x="540.6903707286406" y="297.2" class="small-value" text-anchor="end">-0,11</text>
+      
+        <text x="170" y="329.2" class="tick" text-anchor="end">Mốc lão hóa</text>
+        <rect x="558.2" y="315.8" width="34.1" height="16.6" fill="#b64b4b"/>
+        <text x="552.2432375798545" y="329.2" class="small-value" text-anchor="end">-0,08</text>
+      
+      <text x="180.0" y="366" class="tick" text-anchor="middle">-1,02</text><text x="288.0" y="366" class="tick" text-anchor="middle">-0,76</text><text x="396.0" y="366" class="tick" text-anchor="middle">-0,49</text><text x="504.0" y="366" class="tick" text-anchor="middle">-0,22</text><text x="612.0" y="366" class="tick" text-anchor="middle">0,05</text>
+      <text x="396" y="384" text-anchor="middle" class="axis-label">Pearson correlation with voltage</text>
+    </svg>
+  <figcaption>Tương quan đơn biến với voltage. Current, power và flows tương quan âm mạnh với voltage vì chúng đồng biến với trạng thái tải.</figcaption></figure>
+        <h3>Anomaly descriptors</h3>
+        <p>
+          Tiêu chí ΔV &lt; −50 mV trong khoảng 1 s với |ΔI| &lt; 0.05 A phát hiện
+          <strong>15</strong> sự kiện. Các sự kiện này nên được dùng như nhãn cảnh báo mềm
+          hoặc sample khó trong mô hình predictive maintenance.
+        </p>
+      </div>
+    </div>
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>10. AI and Physics-Based Modeling Readiness</h2>
+      
+    <div class="two-col">
+      <div>
+        <h3>Recommended machine-learning table design</h3>
+        <ul>
+          <li><strong>Windowing:</strong> tạo cửa sổ 30-300 s, stride 5-30 s; giữ thứ tự thời gian trong từng segment.</li>
+          <li><strong>Inputs:</strong> current, voltage, power, pressures, temperatures, dewpoints, flows, current-bin, segment age.</li>
+          <li><strong>Targets:</strong> voltage residual, future voltage at reference load, Pmax proxy, anomaly flag, hoặc RUL theo ngưỡng health index.</li>
+          <li><strong>Splitting:</strong> train/validation/test theo aging blocks, không random split từng dòng.</li>
+          <li><strong>Baselines:</strong> GAM/linear mixed model, XGBoost trên rolling features, TCN/LSTM/Transformer trên sequence windows.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Physics-informed structure</h3>
+        <ul>
+          <li>Fit polarization model theo từng mốc: E, activation proxy, R<sub>ohm</sub>, limiting-current proxy.</li>
+          <li>Dùng physics baseline để dự đoán voltage nominal; AI học residual do hydration, transient load và sensor drift.</li>
+          <li>Ràng buộc mô hình bằng monotonicity theo current và non-negative overpotentials.</li>
+          <li>Tối ưu vận hành cần penalty cho vùng dòng cao kéo dài vì degradation slope tăng rõ theo current-bin.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="table-caption">Đề xuất cấu trúc feature store cho mô hình RUL/predictive maintenance.</div>
+    
+    <table class="compact">
+      <thead><tr><th>Layer</th><th>Examples</th><th>Scientific purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Raw signals</td><td>I, V, P, pressures, temperatures, dewpoints, flows</td><td>Preserve original sensor state</td></tr><tr><td>Load-normalized</td><td>current-bin, V residual by bin, dV/dI proxy</td><td>Separate polarization from aging</td></tr><tr><td>Temporal</td><td>rolling median, rolling MAD, dV/dt after load step</td><td>Capture dynamic response and anomalies</td></tr><tr><td>Physics latent</td><td>Rohm proxy, activation drop, Pmax, high-current curvature</td><td>Interpretable health indicators</td></tr><tr><td>Labels</td><td>aging_hour, EOL threshold, anomaly flags</td><td>Supervised or weakly supervised learning</td></tr>
+      </tbody>
+    </table>
+  
+    
+    </section>
+  
+
+  
+    <section class="page ">
+      <div class="running-head">Long-term Dynamic Durability Test Dataset for Single PEMFC</div>
+      <h2>11. Conclusions and Reporting Limitations</h2>
+      
+    <h3>Scientific conclusions</h3>
+    <ul>
+      <li>Median voltage under dynamic load decreases by <strong>26,8 mV</strong> from 50 h to 1000 h, corresponding to <strong>3,48%</strong> empirical performance loss.</li>
+      <li>Load-conditioned analysis shows degradation is current-dependent: high-current bins exhibit substantially more negative slopes than low-current bins.</li>
+      <li>Polarization data confirms multi-region loss evolution: OCV decrease, activation drop increase, ohmic proxy variation, and Pmax reduction.</li>
+      <li>After-rest curves demonstrate reversible recovery, which is essential for distinguishing permanent degradation from transient water/thermal state.</li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul>
+      <li>Active area không nằm trong CSV/Mendeley metadata trực tiếp; current density trong report chỉ nên dùng như đại lượng suy ra với provenance 25 cm² từ literature liên quan.</li>
+      <li>Không có gas composition/stoichiometry metadata, nên không thể tính λ<sub>H2</sub>/λ<sub>air</sub> một cách bảo toàn vật lý.</li>
+      <li>Không có thông tin calibration/uncertainty của sensor, nên anomaly detection hiện là descriptive flag, chưa phải fault diagnosis.</li>
+      <li>Empirical slopes theo aging label phụ thuộc protocol đo; cần lặp lại hoặc metadata protocol để suy rộng.</li>
+    </ul>
+    <h3>Next steps</h3>
+    <ol>
+      <li>Chuẩn hóa dữ liệu thành Parquet/Feather với schema rõ: abs_age_h, segment_time_s, current_bin, quality_flags.</li>
+      <li>Fit polarization model theo từng mốc để tạo health indicators có diễn giải vật lý.</li>
+      <li>Huấn luyện benchmark RUL theo split thời gian, dùng voltage residual và physics-latent features.</li>
+      <li>Bổ sung/cite rõ metadata cell active area, MEA, gases, stoichiometry, humidity protocol và calibration sheets.</li>
+    </ol>
+    
+    </section>
+  
+</body>
+</html>
