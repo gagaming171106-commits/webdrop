@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trò Chơi Điền Chữ Cái Còn Thiếu</title>
+    <!-- Sử dụng Tailwind CSS để tối ưu hóa bố cục, màu sắc và độ tương thích thiết bị -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phông chữ trẻ em ngộ nghĩnh và nét dày dễ thương -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            touch-action: none; /* Khóa cuộn trang màn hình khi chơi trên iPad/Điện thoại */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Nền trời mầm non dễ thương với đồi cỏ xanh lá cây phía dưới */
+        .kids-bg {
+            background: linear-gradient(to bottom, #7dd3fc 0%, #bae6fd 60%, #86efac 100%);
+            background-attachment: fixed;
+        }
+        /* Bong bóng chữ cái sắc màu sống động */
+        .draggable-letter {
+            cursor: grab;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+            box-shadow: 0 8px 0px rgba(0, 0, 0, 0.15), inset 0 -4px 0px rgba(0, 0, 0, 0.2);
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.15);
+        }
+        .draggable-letter:active {
+            cursor: grabbing;
+            transform: scale(1.15) rotate(-3deg);
+            box-shadow: 0 12px 0px rgba(0, 0, 0, 0.1), inset 0 -4px 0px rgba(0, 0, 0, 0.2);
+        }
+        /* Hộp chữ cái tĩnh của từ */
+        .letter-card {
+            font-family: 'Nunito', sans-serif;
+            border-radius: 18px;
+            background: #ffffff;
+            border: 4px solid #3b82f6;
+            box-shadow: 0 6px 0px #1d4ed8, inset 0 4px 0px rgba(255, 255, 255, 0.5);
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+        }
+        /* Ô trống màu cam nét đứt đang đợi điền */
+        .empty-slot {
+            border: 4px dashed #f59e0b;
+            border-radius: 18px;
+            background-color: rgba(254, 243, 199, 0.75);
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .empty-slot.drag-over {
+            background-color: rgba(252, 211, 77, 1);
+            border-color: #d97706;
+            transform: scale(1.12);
+        }
+        /* Các hạt giấy ăn mừng bay rơi */
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        /* Rung lắc khi trả lời sai */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-3deg); }
+            75% { transform: translateX(8px) rotate(3deg); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="kids-bg min-h-screen flex flex-col items-center justify-between overflow-hidden relative p-4 select-none">
+
+    <!-- HIỆU ỨNG TRANG TRÍ ĐÁM MÂY VÀ CẦU VỒNG -->
+    <div class="absolute top-24 left-6 w-36 h-12 bg-white/70 rounded-full blur-[1px] pointer-events-none animate-pulse duration-[5000ms]"></div>
+    <div class="absolute top-16 right-10 w-44 h-14 bg-white/80 rounded-full blur-[1px] pointer-events-none animate-pulse duration-[7000ms]"></div>
+
+    <!-- HỆ THỐNG PHÁT ÂM TIẾNG VIỆT & HIỆU ỨNG ÂM THANH CHUẨN -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Đọc từ vựng tiếng Việt bằng Web Speech API
+        function speakVietnamese(text) {
+            if ('speechSynthesis' in window) {
+                // Hủy các giọng đọc cũ đang xếp hàng để phát giọng mới ngay lập tức
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'vi-VN';
+                utterance.rate = 0.80; // Tốc độ đọc chậm rãi cho các bé nghe rõ
+                utterance.pitch = 1.15; // Tông giọng cao vui vẻ dễ thương
+                
+                const voices = window.speechSynthesis.getVoices();
+                const viVoice = voices.find(v => v.lang.includes('vi'));
+                if (viVoice) {
+                    utterance.voice = viVoice;
+                }
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Tạo nhạc hiệu ứng âm thanh cổ vũ
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(950, audioCtx.currentTime + 0.35);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.35);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(120, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'win') {
+                const now = audioCtx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.setValueAtTime(freq, now + index * 0.12);
+                    noteGain.gain.setValueAtTime(0.1, now + index * 0.12);
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.12 + 0.3);
+                    noteOsc.start(now + index * 0.12);
+                    noteOsc.stop(now + index * 0.12 + 0.3);
+                });
+            } else if (type === 'tap') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.12);
+            }
+        }
+    </script>
+
+    <!-- MÀN HÌNH BẮT ĐẦU VÀ CHỌN CHỦ ĐIỂM (TOPIC SELECTOR SCREEN) -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-start bg-sky-100/95 p-4 overflow-y-auto">
+        <div class="max-w-4xl w-full bg-white rounded-3xl p-6 md:p-8 shadow-2xl border-8 border-yellow-300 my-4 text-center">
+            <div class="text-6xl mb-2 animate-bounce">🎨✏️🎒</div>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-cyan-600 mb-2 leading-tight tracking-wider">ĐIỀN CHỮ CÁI CÒN THIẾU</h1>
+            <p class="text-gray-600 text-sm md:text-base mb-6 font-semibold">Bé hãy chọn một Chủ điểm yêu thích phía dưới để bắt đầu điền chữ nhé!</p>
+            
+            <!-- Grid 12 Chủ điểm để bé thỏa thích lựa chọn -->
+            <div id="topic-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <!-- Sẽ được đổ tự động từ Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- THANH TIÊU ĐỀ & TIẾN TRÌNH CHƠI (TOP INTERACTIVE BAR) -->
+    <div class="w-full max-w-5xl flex items-center justify-between px-4 py-2 z-10">
+        <!-- Nút Trở Lại Bảng Chọn Chủ điểm -->
+        <button onclick="goToMenu()" class="w-12 h-12 bg-white hover:bg-red-100 active:scale-90 border-4 border-red-400 rounded-full flex items-center justify-center shadow-md transition-transform cursor-pointer" title="Quay lại chọn chủ đề">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </button>
+
+        <!-- Biểu ngữ Chủ điểm hiện tại của trò chơi -->
+        <div id="topic-container" class="bg-yellow-400 text-yellow-950 font-extrabold px-6 py-2.5 rounded-2xl border-b-4 border-yellow-600 shadow-md text-sm md:text-lg">
+            Chủ điểm: TRƯỜNG MẦM NON 🏫
+        </div>
+
+        <!-- Chỉ số Tiến trình học -->
+        <div class="bg-white/90 px-4 py-2 rounded-2xl border-4 border-cyan-400 shadow-md flex items-center gap-2">
+            <span class="text-cyan-600 font-extrabold text-xs md:text-sm">Tiến trình:</span>
+            <span id="progress-text" class="text-green-600 font-black text-sm md:text-lg">1/3</span>
+        </div>
+    </div>
+
+    <!-- KHU VỰC CHỮ CÁI ĐỂ CHỌN / KÉO (DRAGGABLE LETTERS BOARD) -->
+    <div class="w-full max-w-2xl flex flex-col items-center justify-center z-10 px-4">
+        <div class="bg-white/90 border-4 border-white rounded-2xl px-5 py-1.5 shadow-md mb-3 text-red-500 font-extrabold text-sm md:text-base animate-bounce">
+            💡 Bé kéo chữ cái hoặc chỉ cần Bấm vào chữ để ghép nhé!
+        </div>
+        
+        <!-- Các bong bóng chữ cái để kéo hoặc nhấp -->
+        <div id="draggable-options" class="flex flex-wrap justify-center gap-4 md:gap-6 items-center min-h-[90px]">
+            <!-- Sẽ tự động tạo ngẫu nhiên bằng JS -->
+        </div>
+    </div>
+
+    <!-- BẢNG TỪ VỰNG TRUNG TÂM SẮC NÉT (MAIN CARD BOARD) -->
+    <div class="w-full max-w-3xl flex flex-col items-center justify-center my-6 z-10">
+        <div class="bg-white p-8 md:p-12 rounded-3xl border-8 border-amber-400 shadow-2xl flex flex-col items-center justify-center relative w-full max-w-2xl min-h-[220px] transition-all duration-300">
+            
+            <!-- Biểu tượng loa âm thanh to ở giữa bảng học -->
+            <button onclick="speakCurrentWord()" class="absolute top-4 right-4 w-12 h-12 bg-amber-100 hover:bg-amber-200 rounded-full flex items-center justify-center border-2 border-amber-300 shadow cursor-pointer active:scale-90 transition-transform" title="Nghe âm thanh">
+                🔊
+            </button>
+
+            <!-- Nhãn tiêu đề bảng -->
+            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-cyan-500 text-white text-sm md:text-base font-extrabold px-6 py-1.5 rounded-full border-2 border-white shadow-md">
+                BÉ ĐIỀN CHỮ CÒN THIẾU
+            </div>
+
+            <!-- KHU VỰC HIỂN THỊ TỪ CÒN THIẾU CHỮ CÁI (TARGET WORD CARD) -->
+            <div id="word-slots-container" class="flex flex-wrap justify-center gap-2 md:gap-4 p-4 mt-4">
+                <!-- Sẽ tự động tạo các ô ký tự bằng JS -->
+            </div>
+
+            <!-- Gợi ý cách đọc bên dưới -->
+            <button onclick="speakCurrentWord()" class="mt-4 text-cyan-600 hover:text-cyan-700 font-bold text-xs md:text-sm flex items-center gap-2 bg-cyan-50 px-4 py-1.5 rounded-full border border-cyan-200 active:scale-95 transition-all">
+                <span>🔊 Bấm nghe giọng đọc chuẩn của từ!</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- NÚT SKIP ĐỔI CÂU HỎI -->
+    <div class="w-full max-w-md flex justify-center gap-4 mb-6 z-10">
+        <button onclick="skipQuestion()" class="px-8 py-3.5 bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white font-extrabold rounded-2xl border-b-4 border-cyan-700 shadow-md transition-all text-sm md:text-base cursor-pointer">
+            Đổi từ khác ⏭️
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH HOÀN THÀNH TẤT CẢ CHỦ ĐIỂM (WIN MODAL) -->
+    <div id="win-screen" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-green-500/95 p-6 text-center">
+        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border-8 border-yellow-300 transform scale-100 transition-transform">
+            <div class="text-8xl mb-4 animate-bounce">🏆🎁🌟</div>
+            <h2 class="text-3xl md:text-4xl font-black text-green-600 mb-2">BÉ GIỎI QUÁ!</h2>
+            <p class="text-gray-600 mb-8 font-semibold leading-relaxed text-base md:text-lg">
+                Chúc mừng bé đã hoàn thành xuất sắc tất cả các từ trong chủ điểm này!
+            </p>
+            <div class="flex flex-col gap-3">
+                <button onclick="goToMenu()" class="w-full bg-cyan-400 hover:bg-cyan-500 active:scale-95 text-white font-extrabold text-xl py-3 px-6 rounded-2xl border-b-6 border-cyan-600 shadow-md transition-all cursor-pointer">
+                    CHỌN CHỦ ĐIỂM KHÁC 🎒
+                </button>
+                <button onclick="restartGame()" class="w-full bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-white font-extrabold text-xl py-3 px-6 rounded-2xl border-b-6 border-yellow-600 shadow-md transition-all cursor-pointer">
+                    CHƠI LẠI CHỦ ĐIỂM NÀY 🔁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KỊCH BẢN LOGIC ĐIỀU KHIỂN CHÍNH -->
+    <script>
+        // Cấu trúc dữ liệu trò chơi 12 chủ đề theo yêu cầu của bạn, được sửa đổi tuyệt đối chính xác
+        const TOPICS_DATA = [
+            {
+                name: "Trường Mầm Non 🏫",
+                letters: ['o', 'ô', 'ơ'],
+                icon: "🏫",
+                bgColor: "from-pink-400 to-rose-500",
+                words: [
+                    {
+                        full: "cô giáo",
+                        blankIndices: [1], // Vị trí khuyết: 'ô'
+                        missing: ['ô'],
+                        wrongOptions: ['o', 'ơ']
+                    },
+                    {
+                        full: "kéo co",
+                        blankIndices: [5], // Vị trí khuyết: 'o'
+                        missing: ['o'],
+                        wrongOptions: ['ô', 'ơ']
+                    },
+                    {
+                        full: "quả mơ",
+                        blankIndices: [5], // Vị trí khuyết: 'ơ'
+                        missing: ['ơ'],
+                        wrongOptions: ['o', 'ô']
+                    }
+                ]
+            },
+            {
+                name: "Bản Thân 🧑",
+                letters: ['a', 'ă', 'â'],
+                icon: "🧑",
+                bgColor: "from-orange-400 to-amber-500",
+                words: [
+                    {
+                        full: "bàn tay",
+                        blankIndices: [1], // Vị trí khuyết: 'à' (thuộc họ chữ 'a')
+                        missing: ['à'],
+                        wrongOptions: ['ắ', 'â']
+                    },
+                    {
+                        full: "mắt",
+                        blankIndices: [1], // Vị trí khuyết: 'ắ' (thuộc họ chữ 'ă')
+                        missing: ['ắ'],
+                        wrongOptions: ['â', 'à']
+                    },
+                    {
+                        full: "bàn chân",
+                        blankIndices: [6], // Vị trí khuyết: 'â'
+                        missing: ['â'],
+                        wrongOptions: ['ắ', 'à']
+                    }
+                ]
+            },
+            {
+                name: "Gia Đình 🏡",
+                letters: ['e', 'ê'],
+                icon: "🏡",
+                bgColor: "from-emerald-400 to-teal-500",
+                words: [
+                    {
+                        full: "mẹ",
+                        blankIndices: [1], // Vị trí khuyết: 'ẹ' (thuộc họ chữ 'e')
+                        missing: ['ẹ'],
+                        wrongOptions: ['ế']
+                    },
+                    {
+                        full: "bế em",
+                        blankIndices: [1], // Vị trí khuyết: 'ế' (thuộc họ chữ 'ê')
+                        missing: ['ế'],
+                        wrongOptions: ['ẹ']
+                    }
+                ]
+            },
+            {
+                name: "Nghề Nghiệp 👷",
+                letters: ['u', 'ư'],
+                icon: "👷",
+                bgColor: "from-sky-400 to-blue-500",
+                words: [
+                    {
+                        full: "lá thư",
+                        blankIndices: [5], // Vị trí khuyết: 'ư'
+                        missing: ['ư'],
+                        wrongOptions: ['u']
+                    },
+                    {
+                        full: "cuốc đất",
+                        blankIndices: [1], // Vị trí khuyết: 'u'
+                        missing: ['u'],
+                        wrongOptions: ['ư']
+                    }
+                ]
+            },
+            {
+                name: "Giao Thông 🚦",
+                letters: ['h', 'l', 'k'],
+                icon: "🚦",
+                bgColor: "from-purple-400 to-indigo-500",
+                words: [
+                    {
+                        full: "tàu hỏa",
+                        blankIndices: [4], // Vị trí khuyết: 'h'
+                        missing: ['h'],
+                        wrongOptions: ['l', 'k']
+                    },
+                    {
+                        full: "xe lu",
+                        blankIndices: [3], // Vị trí khuyết: 'l'
+                        missing: ['l'],
+                        wrongOptions: ['h', 'k']
+                    },
+                    {
+                        full: "xe kéo",
+                        blankIndices: [3], // Vị trí khuyết: 'k'
+                        missing: ['k'],
+                        wrongOptions: ['h', 'l']
+                    }
+                ]
+            },
+            {
+                name: "Thực Vật 🥦",
+                letters: ['b', 'd', 'đ'],
+                icon: "🥦",
+                bgColor: "from-green-400 to-emerald-600",
+                words: [
+                    {
+                        full: "bắp cải",
+                        blankIndices: [0], // Vị trí khuyết: 'b'
+                        missing: ['b'],
+                        wrongOptions: ['d', 'đ']
+                    },
+                    {
+                        full: "quả dâu",
+                        blankIndices: [4], // Vị trí khuyết: 'd'
+                        missing: ['d'],
+                        wrongOptions: ['b', 'đ']
+                    },
+                    {
+                        full: "đu đủ",
+                        blankIndices: [3], // Vị trí khuyết: 'đ' của từ "đủ"
+                        missing: ['đ'],
+                        wrongOptions: ['b', 'd']
+                    }
+                ]
+            },
+            {
+                name: "Tết Mùa Xuân 🌸",
+                letters: ['m', 'n'],
+                icon: "🌸",
+                bgColor: "from-fuchsia-400 to-pink-500",
+                words: [
+                    {
+                        full: "hoa mai",
+                        blankIndices: [4], // Vị trí khuyết: 'm'
+                        missing: ['m'],
+                        wrongOptions: ['n']
+                    },
+                    {
+                        // Sửa tuyệt đối chính xác: 'b'(0), 'á'(1), 'n'(2), 'h'(3), ' '(4), 'c'(5), 'h'(6), 'ư'(7), 'n'(8), 'g'(9).
+                        // Vị trí khuyết là index 8 (chữ 'n'). Sẽ hiển thị bánh chư_g, kéo chữ 'n' vào.
+                        full: "bánh chưng",
+                        blankIndices: [8],
+                        missing: ['n'],
+                        wrongOptions: ['m']
+                    }
+                ]
+            },
+            {
+                name: "Động Vật 🦊",
+                letters: ['i', 't', 'c'],
+                icon: "🦊",
+                bgColor: "from-yellow-400 to-amber-600",
+                words: [
+                    {
+                        full: "con chim",
+                        blankIndices: [6], // Vị trí khuyết: 'i'
+                        missing: ['i'],
+                        wrongOptions: ['t', 'c']
+                    },
+                    {
+                        full: "con tôm",
+                        blankIndices: [4], // Vị trí khuyết: 't'
+                        missing: ['t'],
+                        wrongOptions: ['i', 'c']
+                    },
+                    {
+                        full: "con cá",
+                        blankIndices: [4], // Vị trí khuyết: 'c'
+                        missing: ['c'],
+                        wrongOptions: ['i', 't']
+                    }
+                ]
+            },
+            {
+                name: "Nước 💧",
+                letters: ['p', 'q'],
+                icon: "💧",
+                bgColor: "from-blue-400 to-cyan-500",
+                words: [
+                    {
+                        full: "phao bơi",
+                        blankIndices: [0], // Vị trí khuyết: 'p'
+                        missing: ['p'],
+                        wrongOptions: ['q']
+                    },
+                    {
+                        full: "quả quýt",
+                        blankIndices: [4], // Vị trí khuyết: 'q' của từ "quýt"
+                        missing: ['q'],
+                        wrongOptions: ['p']
+                    }
+                ]
+            },
+            {
+                name: "Hiện Tượng Tự Nhiên ⛈️",
+                letters: ['g', 'y'],
+                icon: "⛈️",
+                bgColor: "from-slate-400 to-slate-600",
+                words: [
+                    {
+                        full: "đám mây",
+                        blankIndices: [6], // Vị trí khuyết: 'y'
+                        missing: ['y'],
+                        wrongOptions: ['g']
+                    },
+                    {
+                        full: "gió bay",
+                        blankIndices: [0], // Vị trí khuyết: 'g'
+                        missing: ['g'],
+                        wrongOptions: ['y']
+                    }
+                ]
+            },
+            {
+                name: "Quê Hương Đất Nước 🇻🇳",
+                letters: ['s', 'x'],
+                icon: "🇻🇳",
+                bgColor: "from-red-400 to-rose-600",
+                words: [
+                    {
+                        full: "bông sen",
+                        blankIndices: [5], // Vị trí khuyết: 's'
+                        missing: ['s'],
+                        wrongOptions: ['x']
+                    },
+                    {
+                        full: "xóm làng",
+                        blankIndices: [0], // Vị trí khuyết: 'x'
+                        missing: ['x'],
+                        wrongOptions: ['s']
+                    }
+                ]
+            },
+            {
+                name: "Bác Hồ Kính Yêu 🌸",
+                letters: ['v', 'r'],
+                icon: "⭐",
+                bgColor: "from-yellow-500 to-red-500",
+                words: [
+                    {
+                        full: "vườn hoa",
+                        blankIndices: [0], // Vị trí khuyết: 'v'
+                        missing: ['v'],
+                        wrongOptions: ['r']
+                    },
+                    {
+                        full: "rùa vàng",
+                        blankIndices: [0], // Vị trí khuyết: 'r'
+                        missing: ['r'],
+                        wrongOptions: ['v']
+                    }
+                ]
+            }
+        ];
+
+        // Màu sắc tươi tắn bắt mắt dành cho bóng bay chữ cái
+        const BALLOON_COLORS = [
+            'linear-gradient(135deg, #ff4e50 0%, #f9d423 100%)', 
+            'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)', 
+            'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', 
+            'linear-gradient(135deg, #ff007f 0%, #7f00ff 100%)', 
+            'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)'
+        ];
+
+        let currentTopicIdx = 0;
+        let currentWordIdx = 0;
+        
+        let activeDragElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        let initialPosition = { left: 'auto', top: 'auto', position: 'static' };
+
+        // Tự động chạy khi mở ứng dụng
+        window.onload = function() {
+            renderTopicMenu();
+        };
+
+        // Vẽ danh sách 12 Chủ điểm lên màn hình Chọn chủ điểm
+        function renderTopicMenu() {
+            const grid = document.getElementById('topic-grid');
+            grid.innerHTML = '';
+
+            TOPICS_DATA.forEach((topic, idx) => {
+                const button = document.createElement('div');
+                // Thiết kế thẻ chủ điểm lấp lánh sinh động
+                button.className = `bg-gradient-to-br ${topic.bgColor} text-white p-4 rounded-2xl shadow-lg border-4 border-white cursor-pointer active:scale-95 transition-all flex flex-col items-center justify-center hover:shadow-xl`;
+                button.innerHTML = `
+                    <div class="text-4xl mb-2">${topic.icon}</div>
+                    <div class="font-extrabold text-base md:text-lg text-center leading-tight mb-1">${topic.name.split(" ")[0]}</div>
+                    <div class="text-xs font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">Chữ: ${topic.letters.join(', ')}</div>
+                `;
+                button.addEventListener('click', () => {
+                    selectTopic(idx);
+                });
+                grid.appendChild(button);
+            });
+        }
+
+        // Bé nhấn chọn một Chủ điểm cụ thể
+        function selectTopic(idx) {
+            currentTopicIdx = idx;
+            currentWordIdx = 0;
+            playSound('tap');
+            document.getElementById('start-screen').classList.add('hidden');
+            loadQuestion();
+        }
+
+        // Về trang chủ ghim bảng ghim chọn chủ điểm
+        function goToMenu() {
+            playSound('tap');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+            renderTopicMenu();
+        }
+
+        // Chơi lại chủ điểm hiện tại
+        function restartGame() {
+            playSound('tap');
+            document.getElementById('win-screen').classList.add('hidden');
+            currentWordIdx = 0;
+            loadQuestion();
+        }
+
+        // Chuyển nhanh qua từ khác cùng chủ điểm
+        function skipQuestion() {
+            playSound('tap');
+            const topic = TOPICS_DATA[currentTopicIdx];
+            currentWordIdx = (currentWordIdx + 1) % topic.words.length;
+            loadQuestion();
+        }
+
+        // Tải câu hỏi hiện tại lên màn hình học tập
+        function loadQuestion() {
+            const topic = TOPICS_DATA[currentTopicIdx];
+            const wordData = topic.words[currentWordIdx];
+
+            // 1. Cập nhật chủ điểm và Tiến trình học
+            document.getElementById('topic-container').innerText = `Chủ điểm: ${topic.name}`;
+            document.getElementById('progress-text').innerText = `${currentWordIdx + 1}/${topic.words.length}`;
+
+            // 2. Đổ các từ với ô trống
+            renderWordSlots(wordData);
+
+            // 3. Đổ danh sách bong bóng chữ cái để kéo
+            renderDraggableOptions(wordData);
+
+            // Tự động phát âm từ tiếng Việt mẫu ngay khi đổi từ để kích thích giác quan bé
+            setTimeout(() => {
+                speakVietnamese(wordData.full);
+            }, 300);
+        }
+
+        // Phát âm từ vựng hiện tại khi chạm vào ảnh minh họa hoặc bấm loa
+        function speakCurrentWord() {
+            playSound('tap');
+            const wordData = TOPICS_DATA[currentTopicIdx].words[currentWordIdx];
+            speakVietnamese(wordData.full);
+        }
+
+        // Tạo cấu trúc từ bao gồm chữ thường và ô trống
+        function renderWordSlots(wordData) {
+            const container = document.getElementById('word-slots-container');
+            container.innerHTML = '';
+
+            const characters = Array.from(wordData.full);
+            
+            characters.forEach((char, index) => {
+                const card = document.createElement('div');
+                
+                if (char === ' ') {
+                    // Khoảng trắng giữa các chữ
+                    card.className = 'w-6 h-12 md:w-10 md:h-16 flex items-center justify-center';
+                    card.innerHTML = '&nbsp;';
+                } else if (wordData.blankIndices.includes(index)) {
+                    // Tạo ô trống màu vàng đang đợi điền nét đứt
+                    card.className = 'empty-slot w-12 h-16 md:w-16 md:h-20 flex items-center justify-center text-3xl md:text-5xl font-black text-amber-600 animate-pulse';
+                    card.dataset.index = index;
+                    card.dataset.expected = char;
+                    card.innerText = '?';
+                } else {
+                    // Ô chữ bình thường màu xanh lam
+                    card.className = 'letter-card w-12 h-16 md:w-16 md:h-20 flex items-center justify-center text-3xl md:text-5xl font-black text-blue-600';
+                    card.innerText = char;
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        // Trộn ngẫu nhiên đáp án cho vui nhộn
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Vẽ các nút tròn chữ cái
+        function renderDraggableOptions(wordData) {
+            const container = document.getElementById('draggable-options');
+            container.innerHTML = '';
+
+            const optionsSet = new Set([...wordData.missing, ...wordData.wrongOptions]);
+            const optionsArray = shuffleArray(Array.from(optionsSet));
+
+            optionsArray.forEach((char, idx) => {
+                const opt = document.createElement('div');
+                opt.className = 'draggable-letter w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white text-white text-3xl md:text-5xl font-black flex items-center justify-center transform hover:scale-105 active:scale-95 touch-none';
+                
+                opt.style.background = BALLOON_COLORS[idx % BALLOON_COLORS.length];
+                opt.innerText = char;
+                opt.dataset.letter = char;
+
+                // Tích hợp 2 tính năng kéo thả và click bay tự động
+                setupDragAndDrop(opt);
+
+                opt.addEventListener('click', () => {
+                    handleTapLetter(opt);
+                });
+
+                container.appendChild(opt);
+            });
+        }
+
+        // Hỗ trợ click bay tự động vào ô trống
+        function handleTapLetter(element) {
+            const letter = element.dataset.letter;
+            const slots = document.querySelectorAll('.empty-slot');
+            
+            let matchedSlot = null;
+            slots.forEach(slot => {
+                if (slot.dataset.expected === letter && slot.innerText === '?') {
+                    matchedSlot = slot;
+                }
+            });
+
+            if (matchedSlot) {
+                // Ghép đúng
+                executeCorrectMatch(element, matchedSlot, letter);
+            } else {
+                // Ghép sai, rung lắc bong bóng cảnh báo bé
+                playSound('wrong');
+                element.classList.add('animate-shake');
+                setTimeout(() => {
+                    element.classList.remove('animate-shake');
+                }, 400);
+            }
+        }
+
+        // Khởi động kéo thả trên cả điện thoại (Touch) và máy tính (Mouse)
+        function setupDragAndDrop(el) {
+            const onDragStart = (clientX, clientY) => {
+                activeDragElement = el;
+                el.style.zIndex = '1000';
+
+                const rect = el.getBoundingClientRect();
+                initialPosition = {
+                    left: el.style.left || 'auto',
+                    top: el.style.top || 'auto',
+                    position: el.style.position || 'static'
+                };
+
+                dragOffset.x = clientX - rect.left;
+                dragOffset.y = clientY - rect.top;
+
+                el.style.width = rect.width + 'px';
+                el.style.height = rect.height + 'px';
+                el.style.position = 'fixed';
+                el.style.left = (clientX - dragOffset.x) + 'px';
+                el.style.top = (clientY - dragOffset.y) + 'px';
+            };
+
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                onDragStart(e.clientX, e.clientY);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            el.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) return;
+                const touch = e.touches[0];
+                onDragStart(touch.clientX, touch.clientY);
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
+            });
+        }
+
+        function onMouseMove(e) {
+            if (!activeDragElement) return;
+            moveElement(e.clientX, e.clientY);
+            checkHoverZones(e.clientX, e.clientY);
+        }
+
+        function onTouchMove(e) {
+            if (!activeDragElement) return;
+            e.preventDefault(); // Ngăn cuộn trang
+            const touch = e.touches[0];
+            moveElement(touch.clientX, touch.clientY);
+            checkHoverZones(touch.clientX, touch.clientY);
+        }
+
+        function moveElement(clientX, clientY) {
+            activeDragElement.style.left = (clientX - dragOffset.x) + 'px';
+            activeDragElement.style.top = (clientY - dragOffset.y) + 'px';
+        }
+
+        // Kiểm tra xem chữ đang giữ có đè lên ô trống không
+        function checkHoverZones(clientX, clientY) {
+            const slots = document.querySelectorAll('.empty-slot');
+            slots.forEach(slot => {
+                const rect = slot.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    slot.classList.add('drag-over');
+                } else {
+                    slot.classList.remove('drag-over');
+                }
+            });
+        }
+
+        function onMouseUp(e) {
+            if (!activeDragElement) return;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            handleDrop(e.clientX, e.clientY);
+        }
+
+        function onTouchEnd(e) {
+            if (!activeDragElement) return;
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+
+            const lastTouch = e.changedTouches[0];
+            handleDrop(lastTouch.clientX, lastTouch.clientY);
+        }
+
+        // Xử lý khi bé thả tay ra
+        function handleDrop(clientX, clientY) {
+            const el = activeDragElement;
+            activeDragElement = null;
+
+            const droppedLetter = el.dataset.letter;
+            let targetSlot = null;
+
+            const slots = document.querySelectorAll('.empty-slot');
+            slots.forEach(slot => {
+                const rect = slot.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    targetSlot = slot;
+                }
+                slot.classList.remove('drag-over');
+            });
+
+            if (targetSlot && targetSlot.dataset.expected === droppedLetter) {
+                // Trùng khớp hoàn toàn!
+                executeCorrectMatch(el, targetSlot, droppedLetter);
+            } else {
+                // Sai đáp án -> Bay dội ngược về rổ cũ
+                playSound('wrong');
+                el.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                el.style.position = initialPosition.position;
+                el.style.left = initialPosition.left;
+                el.style.top = initialPosition.top;
+                el.style.width = 'auto';
+                el.style.height = 'auto';
+                el.style.zIndex = '1';
+
+                setTimeout(() => {
+                    el.style.transition = 'transform 0.1s ease';
+                }, 400);
+            }
+        }
+
+        // Hàm xử lý khi điền chính xác
+        function executeCorrectMatch(element, slot, letter) {
+            playSound('correct');
+            
+            // Lấy tọa độ để bắn pháo hoa giấy rực rỡ
+            const rect = slot.getBoundingClientRect();
+            createConfettiExplosion(rect.left + rect.width/2, rect.top + rect.height/2, element.style.background);
+
+            // Cập nhật lại giao diện của ô trống đã điền đúng
+            slot.className = 'letter-card w-12 h-16 md:w-16 md:h-20 flex items-center justify-center text-3xl md:text-5xl font-black text-green-600 border-green-500 bg-green-50 shadow-lg scale-110 duration-200';
+            slot.innerText = letter;
+
+            // Xóa bong bóng chữ cái tương ứng đi
+            element.remove();
+
+            // Đọc phát âm từ vựng đó lên ngay để cổ vũ bé
+            const wordData = TOPICS_DATA[currentTopicIdx].words[currentWordIdx];
+            speakVietnamese(wordData.full);
+
+            // Kiểm tra xem tất cả các ô trống đã được lấp đầy chưa
+            const remainingSlots = document.querySelectorAll('.empty-slot');
+            if (remainingSlots.length === 0) {
+                // Tự động chuyển từ mới sau 1.5 giây
+                setTimeout(goToNextStep, 1500);
+            }
+        }
+
+        // Chuyển câu hỏi kế tiếp hoặc chủ đề kế tiếp
+        function goToNextStep() {
+            const currentTopic = TOPICS_DATA[currentTopicIdx];
+            
+            if (currentWordIdx < currentTopic.words.length - 1) {
+                currentWordIdx++;
+                loadQuestion();
+            } else {
+                // Chiến thắng chủ điểm hiện tại!
+                showWinScreen();
+            }
+        }
+
+        // Hiệu ứng pháo hoa giấy rơi rực rỡ khi bé trả lời đúng
+        function createConfettiExplosion(x, y, bgStyle) {
+            const count = 30;
+            const container = document.body;
+
+            for (let i = 0; i < count; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = x + 'px';
+                conf.style.top = y + 'px';
+                
+                // Sử dụng màu sắc tương ứng từ quả bóng
+                if (bgStyle && bgStyle.includes('gradient')) {
+                    conf.style.background = bgStyle;
+                } else {
+                    conf.style.backgroundColor = '#facc15';
+                }
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 4 + Math.random() * 8;
+                const dx = Math.cos(angle) * speed;
+                const dy = Math.sin(angle) * speed - 1;
+
+                container.appendChild(conf);
+
+                let currentX = x;
+                let currentY = y;
+                let velocityY = dy;
+                let opacity = 1;
+
+                const animate = () => {
+                    currentX += dx;
+                    velocityY += 0.25; // Sức hút rơi xuống đất
+                    currentY += velocityY;
+                    opacity -= 0.02;
+
+                    conf.style.left = currentX + 'px';
+                    conf.style.top = currentY + 'px';
+                    conf.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        conf.remove();
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            }
+        }
+
+        // Hiện màn ăn mừng chiến thắng xuất sắc của một chủ điểm
+        function showWinScreen() {
+            playSound('win');
+            const winScreen = document.getElementById('win-screen');
+            winScreen.classList.remove('hidden');
+
+            // Bắn pháo hoa liên hoàn làm bé vô cùng thích thú
+            let fireworks = 0;
+            const interval = setInterval(() => {
+                if (fireworks > 15) return;
+                const randX = Math.random() * window.innerWidth;
+                const randY = Math.random() * window.innerHeight * 0.7;
+                createConfettiExplosion(randX, randY, BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)]);
+                fireworks++;
+            }, 300);
+
+            winScreen.dataset.intervalId = interval;
+        }
+    </script>
+</body>
+</html>
