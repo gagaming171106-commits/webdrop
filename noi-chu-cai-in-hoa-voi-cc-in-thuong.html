@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trò Chơi Nối Chữ In Hoa Và In Thường</title>
+    <!-- Sử dụng Tailwind CSS để tối ưu hóa giao diện và độ tương thích thiết bị -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phông chữ trẻ em ngộ nghĩnh từ Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            touch-action: none; /* Khóa cuộn trang màn hình khi bé kéo vẽ đường nối */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Nền trời thiên nhiên, đồi cỏ và cầu vồng mầm non rực rỡ giống ảnh mẫu */
+        .kids-bg {
+            background: linear-gradient(to bottom, #bfeeff 0%, #e0f9ff 55%, #86efac 100%);
+            background-attachment: fixed;
+        }
+        /* Cầu vồng trang trí góc phải */
+        .rainbow {
+            position: absolute;
+            right: -50px;
+            bottom: 40px;
+            width: 350px;
+            height: 175px;
+            border-top-left-radius: 350px;
+            border-top-right-radius: 350px;
+            border: 24px solid rgba(239, 68, 68, 0.15); /* Đỏ nhạt */
+            border-bottom: 0;
+            pointer-events: none;
+            transform: rotate(15deg);
+            z-index: 1;
+        }
+        /* Đám mây trôi nhẹ nhàng */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* Nút chữ cái tròn trịa, bóng bẩy và cực kỳ nổi bật */
+        .letter-node {
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1), inset 0 -4px 0px rgba(0,0,0,0.1);
+        }
+        .letter-node:hover {
+            transform: scale(1.1);
+        }
+        .letter-node.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 6px rgba(234, 179, 8, 0.6), 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        .letter-node.matched {
+            pointer-events: none;
+            transform: scale(0.95);
+            opacity: 0.8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        /* Canvas vẽ nét nối phủ toàn bộ khung chơi */
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Cho phép click xuyên qua canvas để chọn nút chữ cái */
+            z-index: 20;
+        }
+        /* Pháo hoa giấy ăn mừng rực rỡ */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        /* Rung lắc khi trả lời sai */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px) rotate(-2deg); }
+            75% { transform: translateX(6px) rotate(2deg); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="kids-bg min-h-screen flex flex-col items-center justify-between overflow-hidden relative p-4 select-none">
+
+    <!-- CÁC CHI TIẾT TRANG TRÍ MẦM NON TRÊN NỀN -->
+    <div class="rainbow"></div>
+    <div class="cloud w-32 h-10 top-16 left-10 animate-pulse duration-[5000ms]"></div>
+    <div class="cloud w-40 h-12 top-28 right-24 animate-pulse duration-[7000ms]"></div>
+
+    <!-- HỆ THỐNG ÂM THANH & PHÁT ÂM TIẾNG VIỆT CHUẨN SƯ PHẠM MẦM NON -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Bản đồ phát âm chữ cái tiếng Việt chuẩn sư phạm dành cho trẻ mầm non
+        const VIETNAMESE_PRONUNCIATION_MAP = {
+            'a': 'a',
+            'ă': 'á',    // Khắc phục: ă đọc thành "á"
+            'â': 'ớ',    // Khắc phục: â đọc thành "ớ"
+            'b': 'bờ',
+            'c': 'cờ',
+            'd': 'dờ',
+            'đ': 'đờ',
+            'e': 'e',
+            'ê': 'ê',
+            'g': 'gờ',
+            'h': 'hờ',
+            'i': 'i',
+            'k': 'ca',
+            'l': 'lờ',
+            'm': 'mờ',
+            'n': 'nờ',
+            'o': 'o',
+            'ô': 'ô',
+            'ơ': 'ơ',
+            'p': 'pờ',
+            'q': 'quờ',  // Khắc phục: q đọc thành "quờ"
+            'r': 'rờ',
+            's': 'sờ',  // Khắc phục: s đọc thành "sờ"
+            't': 'tờ',
+            'u': 'u',
+            'ư': 'ư',
+            'v': 'vờ',
+            'x': 'xờ',  // Khắc phục: x đọc thành "xờ"
+            'y': 'i dài'
+        };
+
+        // Kích hoạt nạp danh sách giọng nói của hệ thống ngay lập tức
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // Đọc to chữ cái tiếng Việt cho bé nghe theo bản đồ phát âm chuẩn
+        function speakVietnamese(letter) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                // Chuẩn hóa chữ cái về in thường để đối chiếu bản đồ phát âm chính xác
+                const cleanLetter = letter.trim().toLowerCase();
+                const soundText = VIETNAMESE_PRONUNCIATION_MAP[cleanLetter] || cleanLetter;
+
+                const utterance = new SpeechSynthesisUtterance(soundText);
+                utterance.lang = 'vi-VN';
+                utterance.rate = 0.65; // Đọc thong thả hơn nữa để trẻ nghe rõ âm chuẩn
+                utterance.pitch = 1.30; // Tông giọng cao vui nhộn dễ thương phù hợp mầm non
+
+                const voices = window.speechSynthesis.getVoices();
+                const viVoice = voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
+                if (viVoice) {
+                    utterance.voice = viVoice;
+                }
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Phát nhạc hiệu ứng âm thanh
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                // Âm thanh báo đúng vang lên lảnh lót
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                // Âm thanh báo sai trầm và rung nhẹ
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'tap') {
+                // Âm thanh phản hồi khi bé chạm vào bong bóng chữ
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(350, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'win') {
+                // Nhạc hiệu ăn mừng cực kỳ vui nhộn
+                const now = audioCtx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    const noteOsc = audioCtx.createOscillator();
+                    const noteGain = audioCtx.createGain();
+                    noteOsc.connect(noteGain);
+                    noteGain.connect(audioCtx.destination);
+                    noteOsc.frequency.setValueAtTime(freq, now + index * 0.12);
+                    noteGain.gain.setValueAtTime(0.1, now + index * 0.12);
+                    noteGain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.12 + 0.3);
+                    noteOsc.start(now + index * 0.12);
+                    noteOsc.stop(now + index * 0.12 + 0.3);
+                });
+            }
+        }
+    </script>
+
+    <!-- MÀN HÌNH CHÀO MỪNG BẮT ĐẦU (START SCREEN) -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-cyan-100/95 p-6 text-center">
+        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border-8 border-yellow-300 transform scale-100 transition-transform duration-300">
+            <div class="text-7xl mb-4 animate-bounce">✏️🌸🎒</div>
+            <h1 class="text-3xl md:text-4xl font-black text-cyan-600 mb-3 leading-tight tracking-wide">NỐI CHỮ IN HOA VÀ IN THƯỜNG</h1>
+            <p class="text-gray-600 text-lg mb-8 font-semibold leading-relaxed">
+                Bé yêu hãy kéo ngón tay vẽ đường thẳng nối các chữ <span class="text-purple-600 font-bold">In Hoa</span> ở trên với các chữ <span class="text-pink-600 font-bold">In Thường</span> tương ứng ở dưới nhé!
+            </p>
+            
+            <button onclick="startGame()" class="w-full bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-white font-extrabold text-2xl py-4 px-8 rounded-2xl border-b-8 border-yellow-600 transition-all duration-150 shadow-lg cursor-pointer">
+                CHƠI NGAY THÔI ⭐
+            </button>
+        </div>
+    </div>
+
+    <!-- THANH TIÊU ĐỀ & ĐIỂM SỐ TIẾN TRÌNH (TOP STATUS BAR) -->
+    <div class="w-full max-w-5xl flex items-center justify-between px-4 py-2 z-30">
+        <!-- Nút Trở Về Menu chính -->
+        <button onclick="goToMenu()" class="w-12 h-12 bg-white hover:bg-red-50 active:scale-90 border-4 border-red-400 rounded-full flex items-center justify-center shadow-md transition-transform cursor-pointer" title="Quay lại">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        </button>
+
+        <!-- Tiêu đề đề bài giống hệt ảnh mẫu -->
+        <div class="bg-white/80 border-2 border-white backdrop-blur shadow-md rounded-2xl px-6 py-2 text-center">
+            <h2 class="text-red-600 font-extrabold text-sm md:text-xl leading-tight">Nối các chữ in thường với chữ in hoa tương ứng.</h2>
+        </div>
+
+        <!-- Tiến trình số chữ đã nối đúng trên tổng số 29 chữ -->
+        <div class="bg-white/95 px-4 py-2 rounded-2xl border-4 border-cyan-400 shadow-md flex items-center gap-1.5 font-bold">
+            <span class="text-cyan-600 text-xs md:text-sm">Tiến độ:</span>
+            <span id="score-text" class="text-green-600 font-black text-sm md:text-lg">0/29</span>
+        </div>
+    </div>
+
+    <!-- KHU VỰC CHƠI GAME CHÍNH (GAMEBOARD) -->
+    <div class="w-full max-w-5xl flex-grow flex flex-col justify-evenly my-4 relative z-10 px-4">
+        
+        <!-- Canvas dùng vẽ các nét nối (Nối thành công sẽ vẽ cố định nét vẽ xanh) -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- HÀNG TRÊN: CHỮ IN HOA (UPPERCASE HOVER AREA) -->
+        <div id="uppercase-container" class="flex justify-around items-center w-full min-h-[140px] relative z-30">
+            <!-- Đổ động từ JS: ví dụ P, L, V, Ê, X -->
+        </div>
+
+        <!-- HÀNG DƯỚI: CHỮ IN THƯỜNG (LOWERCASE HOVER AREA) -->
+        <div id="lowercase-container" class="flex justify-around items-center w-full min-h-[140px] relative z-30">
+            <!-- Đổ động từ JS: ví dụ ê, x, l, v, p -->
+        </div>
+
+    </div>
+
+    <!-- KHU VỰC CÁC NÚT ĐIỀU KHIỂN BÊN DƯỚI -->
+    <div class="w-full max-w-md flex justify-center gap-4 mb-4 z-30">
+        <button onclick="nextRound()" class="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white font-extrabold rounded-2xl border-b-4 border-cyan-700 shadow-md transition-all text-sm md:text-base cursor-pointer">
+            Đổi chữ khác 🔄
+        </button>
+    </div>
+
+    <!-- MÀN HÌNH HOÀN THÀNH TẤT CẢ 29 CHỮ CÁI (WIN MODAL) -->
+    <div id="win-screen" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-green-500/95 p-6 text-center animate-fade-in">
+        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border-8 border-yellow-300 transform scale-100 transition-transform">
+            <div class="text-8xl mb-4 animate-bounce">🏆🎁⭐</div>
+            <h2 class="text-3xl md:text-4xl font-black text-green-600 mb-2">QUÁ TUYỆT VỜI!</h2>
+            <p class="text-gray-600 mb-8 font-semibold leading-relaxed text-base md:text-lg">
+                Chúc mừng bé yêu đã xuất sắc ghép đúng tất cả các cặp chữ cái In Hoa và In Thường!
+            </p>
+            <button onclick="restartGame()" class="w-full bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-white font-extrabold text-2xl py-4 px-6 rounded-2xl border-b-8 border-yellow-600 shadow-md transition-all cursor-pointer">
+                CHƠI LẠI TỪ ĐẦU 🔁
+            </button>
+        </div>
+    </div>
+
+    <!-- KỊCH BẢN JAVASCRIPT ĐIỀU KHIỂN GAMEPLAY -->
+    <script>
+        // Danh sách toàn bộ 29 cặp chữ cái tiếng Việt đầy đủ
+        const ALPHABET_PAIRS = [
+            { upper: 'A', lower: 'a' }, { upper: 'Ă', lower: 'ă' }, { upper: 'Â', lower: 'â' },
+            { upper: 'B', lower: 'b' }, { upper: 'C', lower: 'c' }, { upper: 'D', lower: 'd' },
+            { upper: 'Đ', lower: 'đ' }, { upper: 'E', lower: 'e' }, { upper: 'Ê', lower: 'ê' },
+            { upper: 'G', lower: 'g' }, { upper: 'H', lower: 'h' }, { upper: 'I', lower: 'i' },
+            { upper: 'K', lower: 'k' }, { upper: 'L', lower: 'l' }, { upper: 'M', lower: 'm' },
+            { upper: 'N', lower: 'n' }, { upper: 'O', lower: 'o' }, { upper: 'Ô', lower: 'ô' },
+            { upper: 'Ơ', lower: 'ơ' }, { upper: 'P', lower: 'p' }, { upper: 'Q', lower: 'q' },
+            { upper: 'R', lower: 'r' }, { upper: 'S', lower: 's' }, { upper: 'T', lower: 't' },
+            { upper: 'U', lower: 'u' }, { upper: 'Ư', lower: 'ư' }, { upper: 'V', lower: 'v' },
+            { upper: 'X', lower: 'x' }, { upper: 'Y', lower: 'y' }
+        ];
+
+        // Màu sắc bắt mắt dễ thương cho các chữ cái (Phù hợp với từng chữ cái ngẫu nhiên)
+        const NODE_COLORS = ['#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#06b6d4'];
+
+        // Trạng thái chơi game
+        let matchedPairs = new Set(); // Chứa các ký tự in thường đã được nối thành công
+        let currentRoundPairs = [];   // Danh sách 5 cặp đang chơi ở lượt này
+        
+        // Quản lý trạng thái kéo vẽ bằng chuột/ngón tay
+        let drawingLine = null; // { startNode: Element, startX: px, startY: px, currentX: px, currentY: px }
+        let completedLines = []; // Mảng chứa các đường đã nối đúng [{ startX, startY, endX, endY, color }]
+
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Đảm bảo kích thước Canvas luôn vừa vặn màn hình khi đổi hướng điện thoại/ipad
+        window.addEventListener('resize', resizeCanvas);
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            // Vẽ lại các đường đã nối thành công sau khi resize
+            redrawAll();
+        }
+
+        // Bắt đầu vào game từ màn hình chờ
+        function startGame() {
+            playSound('tap');
+            document.getElementById('start-screen').classList.add('hidden');
+            matchedPairs.clear();
+            updateScoreUI();
+            loadNewRound();
+        }
+
+        // Quay lại màn hình Chờ bắt đầu
+        function goToMenu() {
+            playSound('tap');
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+        }
+
+        // Chơi lại từ đầu
+        function restartGame() {
+            playSound('tap');
+            document.getElementById('win-screen').classList.add('hidden');
+            matchedPairs.clear();
+            updateScoreUI();
+            loadNewRound();
+        }
+
+        // Cập nhật điểm số UI
+        function updateScoreUI() {
+            document.getElementById('score-text').innerText = `${matchedPairs.size}/29`;
+        }
+
+        // Đổi sang vòng mới (Lấy ngẫu nhiên 5 cặp chưa hoàn thành)
+        function loadNewRound() {
+            // Thiết lập lại các nét vẽ cũ
+            completedLines = [];
+            drawingLine = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Tìm những chữ cái chưa được nối hoàn thành
+            let remaining = ALPHABET_PAIRS.filter(pair => !matchedPairs.has(pair.lower));
+
+            // Nếu đã thắng tất cả 29 chữ cái!
+            if (matchedPairs.size === 29) {
+                showWinScreen();
+                return;
+            }
+
+            // Chọn ra 5 cặp chữ cái cho lượt chơi này
+            let selected = [];
+            if (remaining.length >= 5) {
+                // Sắp xếp ngẫu nhiên chữ chưa học
+                const shuffledRemaining = [...remaining].sort(() => 0.5 - Math.random());
+                selected = shuffledRemaining.slice(0, 5);
+            } else {
+                // Nếu còn ít hơn 5 cặp, lấy hết số cặp còn lại
+                selected = [...remaining];
+                // Lấy thêm các cặp ngẫu nhiên đã học từ trước để ghép cho đủ 5 cặp
+                const played = ALPHABET_PAIRS.filter(pair => matchedPairs.has(pair.lower));
+                const shuffledPlayed = played.sort(() => 0.5 - Math.random());
+                for (let pair of shuffledPlayed) {
+                    if (selected.length < 5) {
+                        selected.push(pair);
+                    }
+                }
+            }
+
+            currentRoundPairs = selected;
+
+            // Xáo trộn vị trí hiển thị để chữ in Hoa và in Thường lệch nhau, thử thách trí não bé
+            let uppercaseList = [...currentRoundPairs].sort(() => 0.5 - Math.random());
+            let lowercaseList = [...currentRoundPairs].sort(() => 0.5 - Math.random());
+
+            renderRound(uppercaseList, lowercaseList);
+            setTimeout(resizeCanvas, 100); // Reset kích thước canvas sau khi các nút chữ được vẽ xong
+        }
+
+        // Bấm nút đổi chữ thủ công
+        function nextRound() {
+            playSound('tap');
+            loadNewRound();
+        }
+
+        // Vẽ các nút chữ tròn trịa lên giao diện mầm non
+        function renderRound(uppers, lowers) {
+            const upperContainer = document.getElementById('uppercase-container');
+            const lowerContainer = document.getElementById('lowercase-container');
+
+            upperContainer.innerHTML = '';
+            lowerContainer.innerHTML = '';
+
+            // 1. Tạo hàng chữ IN HOA ở trên (Màu sắc sặc sỡ, bóng bẩy)
+            uppers.forEach((pair, index) => {
+                const node = document.createElement('div');
+                const randomColor = NODE_COLORS[index % NODE_COLORS.length];
+                
+                node.className = 'letter-node w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-4 flex items-center justify-center text-3xl md:text-5xl font-black relative z-30 select-none';
+                node.style.borderColor = randomColor;
+                node.style.color = randomColor;
+                node.innerText = pair.upper;
+                node.dataset.letter = pair.lower; // Dùng chữ thường làm mã định dạng liên kết
+                node.dataset.type = 'upper';
+
+                // Gán sự kiện chạm để vẽ đường nối
+                setupDragEvents(node);
+
+                upperContainer.appendChild(node);
+            });
+
+            // 2. Tạo hàng chữ IN THƯỜNG ở dưới
+            lowers.forEach((pair, index) => {
+                const node = document.createElement('div');
+                const randomColor = NODE_COLORS[(index + 3) % NODE_COLORS.length];
+                
+                node.className = 'letter-node w-16 h-16 md:w-20 md:h-20 rounded-full bg-white border-4 flex items-center justify-center text-3xl md:text-5xl font-black relative z-30 select-none';
+                node.style.borderColor = randomColor;
+                node.style.color = randomColor;
+                node.innerText = pair.lower;
+                node.dataset.letter = pair.lower;
+                node.dataset.type = 'lower';
+
+                setupDragEvents(node);
+
+                lowerContainer.appendChild(node);
+            });
+        }
+
+        // Quản lý toàn bộ sự kiện chạm kéo nối cho cả điện thoại và máy tính
+        function setupDragEvents(node) {
+            
+            // Bắt đầu chạm/click
+            const onStart = (clientX, clientY) => {
+                // Chỉ cho phép vẽ từ những nút chưa hoàn thành
+                if (node.classList.contains('matched')) return;
+
+                playSound('tap');
+                
+                // Đánh dấu nút được chọn
+                clearAllSelection();
+                node.classList.add('selected');
+
+                // Lấy tọa độ tâm của nút tròn làm điểm xuất phát đường vẽ
+                const rect = node.getBoundingClientRect();
+                const containerRect = canvas.getBoundingClientRect();
+
+                const startX = rect.left + rect.width / 2 - containerRect.left;
+                const startY = rect.top + rect.height / 2 - containerRect.top;
+
+                drawingLine = {
+                    startNode: node,
+                    startX: startX,
+                    startY: startY,
+                    currentX: startX,
+                    currentY: startY
+                };
+
+                // Lắng nghe di chuyển toàn màn hình
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
+            };
+
+            node.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                onStart(e.clientX, e.clientY);
+            });
+
+            node.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                onStart(touch.clientX, touch.clientY);
+            });
+        }
+
+        // Đang di chuyển chuột
+        function onMove(e) {
+            if (!drawingLine) return;
+            const containerRect = canvas.getBoundingClientRect();
+            drawingLine.currentX = e.clientX - containerRect.left;
+            drawingLine.currentY = e.clientY - containerRect.top;
+            redrawAll();
+        }
+
+        // Đang di chuyển ngón tay trên điện thoại
+        function onTouchMove(e) {
+            if (!drawingLine) return;
+            e.preventDefault(); // Ngăn trình duyệt cuộn trang khi vẽ
+            const touch = e.touches[0];
+            const containerRect = canvas.getBoundingClientRect();
+            drawingLine.currentX = touch.clientX - containerRect.left;
+            drawingLine.currentY = touch.clientY - containerRect.top;
+            redrawAll();
+        }
+
+        // Kết thúc vẽ bằng chuột
+        function onEnd(e) {
+            if (!drawingLine) return;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            handleLineDropped(e.clientX, e.clientY);
+        }
+
+        // Kết thúc vẽ bằng ngón tay
+        function onTouchEnd(e) {
+            if (!drawingLine) return;
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            
+            const lastTouch = e.changedTouches[0];
+            handleLineDropped(lastTouch.clientX, lastTouch.clientY);
+        }
+
+        // Kiểm tra xem bé đã thả đường nối vào nút chữ nào
+        function handleLineDropped(clientX, clientY) {
+            const startNode = drawingLine.startNode;
+            let targetNode = null;
+
+            // Kiểm tra con trỏ thả có đè lên nút chữ nào khác không
+            const allNodes = document.querySelectorAll('.letter-node');
+            allNodes.forEach(node => {
+                const rect = node.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    targetNode = node;
+                }
+            });
+
+            // Logic kiểm tra nối đúng:
+            // 1. Phải có nút mục tiêu.
+            // 2. Nút bắt đầu và nút kết thúc không được trùng một hàng (ví dụ: in hoa nối với in thường).
+            // 3. Chữ cái đại diện (dataset.letter) phải giống hệt nhau (ví dụ: A và a đều có mã là 'a').
+            if (targetNode && 
+                startNode !== targetNode && 
+                startNode.dataset.type !== targetNode.dataset.type && 
+                startNode.dataset.letter === targetNode.dataset.letter) {
+                
+                // NỐI ĐÚNG!
+                const letter = startNode.dataset.letter;
+                
+                // Nếu đây là chữ cái bé chưa từng nối đúng bao giờ
+                if (!matchedPairs.has(letter)) {
+                    matchedPairs.add(letter);
+                    updateScoreUI();
+                }
+
+                playSound('correct');
+                createConfetti(clientX, clientY, startNode.style.color);
+
+                // Khóa 2 nút tròn chữ cái lại (Hiển thị nét dính đẹp mắt)
+                startNode.classList.add('matched');
+                targetNode.classList.add('matched');
+
+                // Lưu đường vẽ thành công vào danh sách để vẽ cố định
+                const rectTarget = targetNode.getBoundingClientRect();
+                const containerRect = canvas.getBoundingClientRect();
+                const endX = rectTarget.left + rectTarget.width / 2 - containerRect.left;
+                const endY = rectTarget.top + rectTarget.height / 2 - containerRect.top;
+
+                completedLines.push({
+                    startX: drawingLine.startX,
+                    startY: drawingLine.startY,
+                    endX: endX,
+                    endY: endY,
+                    color: startNode.style.color // Dùng màu gốc của chữ cái để làm màu nét vẽ rất đẹp
+                });
+
+                // Bé ghép đúng chữ nào, phát âm chuẩn chữ cái đó bằng Tiếng Việt luôn!
+                speakVietnamese(letter);
+
+                // Kiểm tra xem lượt chơi hiện tại đã nối hết chưa
+                checkRoundCompletion();
+
+            } else {
+                // NỐI SAI HOẶC THẢ RA NGOÀI -> Vẽ biến mất
+                playSound('wrong');
+                startNode.classList.add('animate-shake');
+                setTimeout(() => {
+                    startNode.classList.remove('animate-shake');
+                }, 400);
+            }
+
+            // Xóa đường nối tạm thời và vẽ lại toàn bộ
+            drawingLine = null;
+            clearAllSelection();
+            redrawAll();
+        }
+
+        // Xóa viền màu vàng chọn nổi của toàn bộ các chữ
+        function clearAllSelection() {
+            document.querySelectorAll('.letter-node').forEach(node => {
+                node.classList.remove('selected');
+            });
+        }
+
+        // Vẽ lại toàn bộ các đường vẽ dính cũ và đường vẽ di động mới
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Vẽ các đường đã nối thành công (màu sắc dính chắc chắn có viền nét thanh thoát)
+            completedLines.forEach(line => {
+                // Vẽ viền bóng đường nối màu trắng nhạt
+                ctx.beginPath();
+                ctx.moveTo(line.startX, line.startY);
+                ctx.lineTo(line.endX, line.endY);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 12;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Vẽ đường nối màu gốc của chữ cái
+                ctx.beginPath();
+                ctx.moveTo(line.startX, line.startY);
+                ctx.lineTo(line.endX, line.endY);
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = 6;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            });
+
+            // 2. Vẽ đường hiện tại đang kéo di chuyển (Nét đứt lấp lánh màu vàng cam thu hút)
+            if (drawingLine) {
+                // Viền trắng
+                ctx.beginPath();
+                ctx.moveTo(drawingLine.startX, drawingLine.startY);
+                ctx.lineTo(drawingLine.currentX, drawingLine.currentY);
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                ctx.lineWidth = 10;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Nét vẽ chính
+                ctx.beginPath();
+                ctx.moveTo(drawingLine.startX, drawingLine.startY);
+                ctx.lineTo(drawingLine.currentX, drawingLine.currentY);
+                ctx.strokeStyle = '#f59e0b'; // Màu vàng cam nổi bật
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        }
+
+        // Kiểm tra xem 5 cặp của vòng này đã nối xong hết chưa
+        function checkRoundCompletion() {
+            // Lấy danh sách các chữ đang có trên bảng
+            const unmatchedOnBoard = Array.from(document.querySelectorAll('.letter-node:not(.matched)'));
+            if (unmatchedOnBoard.length === 0) {
+                // Nếu đã kết thúc vòng này và đã kết thúc toàn bộ 29 từ tiếng Việt
+                if (matchedPairs.size === 29) {
+                    setTimeout(showWinScreen, 800);
+                } else {
+                    // Tự động chuyển màn sau 1.2 giây ăn mừng
+                    setTimeout(loadNewRound, 1200);
+                }
+            }
+        }
+
+        // Tạo hiệu ứng nổ pháo hoa hạt giấy lấp lánh khi bé nối chuẩn xác
+        function createConfetti(x, y, color) {
+            const count = 35;
+            const container = document.body;
+
+            for (let i = 0; i < count; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = x + 'px';
+                conf.style.top = y + 'px';
+                conf.style.backgroundColor = color || '#facc15';
+
+                // Tốc độ và hướng bay vòng tròn ngẫu nhiên
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 4 + Math.random() * 8;
+                const dx = Math.cos(angle) * speed;
+                const dy = Math.sin(angle) * speed - 1.5; // Xu hướng vọt lên nhẹ
+
+                container.appendChild(conf);
+
+                let currentX = x;
+                let currentY = y;
+                let velocityY = dy;
+                let opacity = 1;
+
+                const animate = () => {
+                    currentX += dx;
+                    velocityY += 0.25; // Rơi tự do
+                    currentY += velocityY;
+                    opacity -= 0.02;
+
+                    conf.style.left = currentX + 'px';
+                    conf.style.top = currentY + 'px';
+                    conf.style.opacity = opacity;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        conf.remove();
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            }
+        }
+
+        // Hiện màn hình chúc mừng chiến thắng rực rỡ
+        function showWinScreen() {
+            playSound('win');
+            const winScreen = document.getElementById('win-screen');
+            winScreen.classList.remove('hidden');
+
+            // Bắn pháo hoa giấy liên tục ăn mừng thành quả của bé
+            let fireworks = 0;
+            const interval = setInterval(() => {
+                if (fireworks > 25) {
+                    clearInterval(interval);
+                    return;
+                }
+                const randX = Math.random() * window.innerWidth;
+                const randY = Math.random() * window.innerHeight * 0.7;
+                createConfetti(randX, randY, NODE_COLORS[Math.floor(Math.random() * NODE_COLORS.length)]);
+                fireworks++;
+            }, 300);
+
+            winScreen.dataset.intervalId = interval;
+        }
+    </script>
+</body>
+</html>
