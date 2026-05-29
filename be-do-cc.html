@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi Tập Đồ Chữ Cái Mầm Non - ĐỒ CHỮ IN HOA</title>
+    <!-- Tailwind CSS cho thiết kế giao diện nhanh, mượt -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font chữ mầm non tinh nghịch đáng yêu -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700;900&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <!-- FontAwesome biểu tượng sắc nét -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Quicksand', 'Patrick Hand', sans-serif;
+            background-color: #2b1810; /* Khung gỗ sồi ngoài cùng */
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* Bàn học gỗ ấm áp bao quanh */
+        .wood-frame {
+            background: radial-gradient(circle, #a16207 0%, #451a03 100%);
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.8);
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Nền bảng vẽ tím pastel dập họa tiết lá chìm giống hệt hình ảnh mẫu tải lên */
+        .play-canvas-bg {
+            background-color: #ca8eff;
+            background-image: 
+                radial-gradient(at 20% 20%, #e9d5ff 0px, transparent 50%),
+                radial-gradient(at 80% 80%, #c084fc 0px, transparent 50%),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23a855f7' fill-opacity='0.15'%3E%3Cpath d='M40 5c-5 10-15 15-25 15v10c12 0 20-5 25-15 5 10 13 15 25 15V20c-10 0-20-5-25-15zM15 45c-3 6-9 9-15 9v6c7 0 12-3 15-9 3 6 8 9 15 9v-6c-6 0-12-3-15-9zm50 0c-3 6-9 9-15 9v6c7 0 12-3 15-9 3 6 8 9 15 9v-6c-6 0-12-3-15-9z'/%3E%3C/g%3E%3C/svg%3E");
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(255,255,255,0.4);
+            border-radius: 24px;
+            border: 10px solid #fef08a; /* Khung vàng nhạt nổi bật */
+        }
+
+        /* Gáy sách lò xo của vở tập vẽ */
+        .notebook-spine {
+            width: 25px;
+            background: linear-gradient(90deg, #d97706, #f59e0b, #b45309);
+            box-shadow: inset -4px 0 8px rgba(0,0,0,0.3), 2px 0 4px rgba(0,0,0,0.4);
+            border-radius: 6px 0 0 6px;
+        }
+
+        /* Hiệu ứng nháy đỏ rực rỡ dắt ngón tay bé */
+        @keyframes pointer-blink {
+            0%, 100% { transform: scale(1) translate(-50%, -50%); opacity: 1; filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)); }
+            50% { transform: scale(1.35) translate(-37%, -37%); opacity: 0.5; filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.3)); }
+        }
+        .guiding-arrow {
+            animation: pointer-blink 0.8s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        /* Hiệu ứng bừng sáng cầu vồng đổi màu liên tục khi hoàn thành nét viết */
+        @keyframes rainbow-glow {
+            0% { filter: hue-rotate(0deg) drop-shadow(0 0 15px rgba(253, 224, 71, 0.8)); }
+            100% { filter: hue-rotate(360deg) drop-shadow(0 0 25px rgba(253, 224, 71, 1)); }
+        }
+        .rainbow-active {
+            animation: rainbow-glow 3s linear infinite;
+        }
+
+        .bounce-active:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .bounce-active {
+            transition: transform 0.2s ease;
+        }
+
+        /* Thiết kế nút trang chủ Home 3D bóng bẩy giống hình chụp mẫu */
+        .home-btn-3d {
+            background: radial-gradient(circle, #38bdf8 0%, #0284c7 100%);
+            box-shadow: 0 6px 0 #0369a1, 0 10px 20px rgba(0,0,0,0.4);
+            border: 3px solid #fff;
+            border-radius: 18px;
+            transition: all 0.1s ease;
+        }
+        .home-btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0369a1, 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        /* Thanh cuộn ngang mượt cho danh sách chữ cái */
+        .scrollbar-hidden::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hidden {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="wood-frame flex items-center justify-center p-2 sm:p-4 overflow-hidden select-none">
+
+    <!-- Canvas Pháo Hoa 3D Hạt lấp lánh nổ bung phía sau nền trời tím -->
+    <canvas id="fireworksCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Khung giao diện trung tâm -->
+    <div class="relative w-full max-w-6xl mx-auto bg-[#5c3116] p-3 sm:p-5 rounded-[32px] shadow-2xl border-4 border-[#3a1d0b] z-10 flex flex-col justify-between min-h-[92vh] sm:min-h-0">
+        
+        <!-- Header điều khiển: Các nút tiện ích và chọn chủ điểm -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 bg-[#42200c] p-3 rounded-2xl border border-[#2b1407]">
+            
+            <!-- Nút Home 3D quay lại chủ điểm đầu giống ảnh mẫu -->
+            <button onclick="goHome()" class="home-btn-3d w-14 h-14 flex items-center justify-center text-white text-3xl bounce-active" title="Về trang đầu">
+                <i class="fa-solid fa-house"></i>
+            </button>
+
+            <!-- Tên Chủ điểm & Chữ cái hiện tại -->
+            <div class="flex-1 min-w-[180px] pl-2 text-left">
+                <h1 class="text-white text-lg sm:text-2xl font-black tracking-wide flex items-center gap-2">
+                    <span class="text-yellow-300 font-black animate-pulse" id="headerLetter">A</span>
+                    <span class="text-yellow-100 text-xs sm:text-sm font-bold bg-[#653315] px-2.5 py-1 rounded-full border border-yellow-600/30" id="headerTopicName">Chủ điểm: Bản thân</span>
+                </h1>
+                <p class="text-orange-200 text-[11px] sm:text-xs">Đồ nét CHỮ IN HOA để mở hiệu ứng cầu vồng kỳ diệu!</p>
+            </div>
+
+            <!-- Nút Xem Mẫu (Demo) & Làm lại nhanh -->
+            <div class="flex items-center gap-2">
+                <button id="btnDemo" class="bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-extrabold py-2 px-4 rounded-full shadow-lg border-b-4 border-green-700 bounce-active text-xs sm:text-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles animate-spin"></i> Xem Mẫu (Demo)
+                </button>
+                <button id="btnReset" class="bg-gradient-to-r from-red-400 to-pink-500 hover:from-red-500 hover:to-pink-600 text-white font-extrabold py-2 px-4 rounded-full shadow-lg border-b-4 border-pink-700 bounce-active text-xs sm:text-sm flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Vẽ Lại
+                </button>
+                <button id="btnSound" class="bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold p-2 rounded-full shadow-lg bounce-active w-9 h-9 flex items-center justify-center">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Layout chính: Sidebar 12 Chủ điểm mầm non (Bên trái) + Khung vẽ (Bên phải) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 items-stretch">
+            
+            <!-- Danh sách 12 Chủ điểm thiết quan có ảnh đại diện và vật cưỡi -->
+            <div class="lg:col-span-3 bg-[#42200c] p-2 rounded-2xl border border-[#2e1507] flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto max-h-[105px] lg:max-h-[460px] scrollbar-hidden">
+                <span class="text-orange-300 text-[10px] font-black uppercase tracking-widest text-center lg:text-left block pb-1 border-b border-orange-900 sticky top-0 bg-[#42200c] z-10 w-full">12 Chủ Điểm Mầm Non</span>
+                <div class="flex lg:flex-col gap-1.5 w-full" id="topicsMenuContainer">
+                    <!-- Tự động kết xuất danh sách 12 chủ điểm bằng JS -->
+                </div>
+            </div>
+
+            <!-- Sách học đồ chữ cái nét gỗ mộc -->
+            <div class="lg:col-span-9 flex flex-row relative">
+                
+                <!-- Gáy sách giả gỗ của cuốn tập viết -->
+                <div class="notebook-spine hidden sm:block"></div>
+
+                <!-- Bảng vẽ tím pastel mộng mơ y chang ảnh mẫu -->
+                <div class="play-canvas-bg flex-1 p-3 sm:p-5 relative overflow-hidden flex flex-col justify-between min-h-[350px] sm:min-h-[430px]">
+                    
+                    <!-- Giỏ hoa quả dễ thương trang trí ở góc trái giống ảnh mẫu -->
+                    <div class="absolute bottom-3 left-3 z-10 pointer-events-none select-none hidden sm:block">
+                        <svg class="w-24 sm:w-28 h-auto drop-shadow-xl" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Quai giỏ dệt nan mây -->
+                            <path d="M25,65 C25,20 125,20 125,65" stroke="#b45309" stroke-width="8" stroke-linecap="round" fill="none"/>
+                            <!-- Vải ren lót màu xanh nhạt dập ly mầm non -->
+                            <path d="M15,60 C40,50 110,50 135,60 C140,65 140,75 135,80 C110,90 40,90 15,80 C10,75 10,65 15,60 Z" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2.5"/>
+                            <!-- Giỏ nan tre dệt màu vàng cam -->
+                            <path d="M20,70 L35,110 C38,115 45,118 75,118 C105,118 112,115 115,110 L130,70 C130,70 110,80 75,80 C40,80 20,70 20,70 Z" fill="#f59e0b" stroke="#92400e" stroke-width="4"/>
+                            <!-- Chùm quả đan xếp bên trong giỏ -->
+                            <circle cx="50" cy="55" r="14" fill="#ef4444"/> <!-- Táo đỏ -->
+                            <circle cx="85" cy="55" r="14" fill="#eab308"/> <!-- Cam vàng -->
+                            <circle cx="68" cy="50" r="12" fill="#22c55e"/> <!-- Na xanh -->
+                            <text x="75" y="102" fill="#7c2d12" font-family="'Quicksand'" font-weight="900" font-size="11" text-anchor="middle">GIỎ HỌC TẬP</text>
+                        </svg>
+                    </div>
+
+                    <!-- Thanh phụ chọn nhanh các chữ cái thuộc chủ điểm hiện tại (Ví dụ: A, Ă, Â) -->
+                    <div class="flex items-center justify-center gap-1.5 mb-2 z-10" id="letterSubMenu">
+                        <!-- Tự động render các nút chữ cái của nhóm chủ điểm -->
+                    </div>
+
+                    <!-- Khu vực tương tác vẽ chính -->
+                    <div class="relative w-full flex-1 flex items-center justify-center" id="drawingArea">
+                        
+                        <!-- Mũi tên hướng dẫn đỏ nhấp nháy chỉ đúng chiều vẽ -->
+                        <div id="guidingArrow" class="guiding-arrow absolute text-red-600 text-3xl z-30 hidden">
+                            <i class="fa-solid fa-hand-point-up"></i>
+                        </div>
+
+                        <!-- Quái vật xanh dẫn hướng cưỡi vật phẩm chủ đề dắt tay trẻ viết -->
+                        <div id="characterGuide" class="absolute w-20 h-20 z-20 pointer-events-none transition-all duration-100 ease-out flex flex-col items-center justify-center" style="transform: translate(-50%, -50%); left: 50%; top: 50%;">
+                            <!-- Vật phẩm cưỡi đặc trưng thay đổi theo chữ cái -->
+                            <div id="rideItem" class="absolute bottom-0 w-11 h-11 rounded-full flex items-center justify-center text-white text-xl shadow-lg border-2 border-white transform translate-y-3 transition-colors duration-300">
+                                <span id="rideEmoji" class="text-xl">🍎</span>
+                            </div>
+                            
+                            <!-- Chú quái vật mầm non mắt to xù lông màu xanh y chang trong ảnh mẫu -->
+                            <svg class="w-16 h-16 transform -translate-y-2 animate-bounce" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Thân quái vật xanh lá tròn xoe -->
+                                <circle cx="50" cy="50" r="32" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+                                <!-- Tai lông xù tinh nghịch -->
+                                <ellipse cx="22" cy="30" rx="9" ry="13" fill="#22c55e" stroke="#15803d" stroke-width="2" transform="rotate(-20 22 30)"/>
+                                <ellipse cx="22" cy="30" rx="4" ry="7" fill="#f472b6"/>
+                                <ellipse cx="78" cy="30" rx="9" ry="13" fill="#22c55e" stroke="#15803d" stroke-width="2" transform="rotate(20 78 30)"/>
+                                <ellipse cx="78" cy="30" rx="4" ry="7" fill="#f472b6"/>
+                                <!-- Mắt to xoe tròn đen láy phản chiếu ánh sáng trắng -->
+                                <circle cx="36" cy="46" r="12" fill="white" stroke="#15803d" stroke-width="1.5"/>
+                                <circle cx="36" cy="46" r="6" fill="#111827"/>
+                                <circle cx="34" cy="43" r="2.5" fill="white"/>
+                                <circle cx="64" cy="46" r="12" fill="white" stroke="#15803d" stroke-width="1.5"/>
+                                <circle cx="64" cy="46" r="6" fill="#111827"/>
+                                <circle cx="62" cy="43" r="2.5" fill="white"/>
+                                <!-- Má hồng đáng yêu mầm non -->
+                                <circle cx="23" cy="58" r="5" fill="#f43f5e" opacity="0.6"/>
+                                <circle cx="77" cy="58" r="5" fill="#f43f5e" opacity="0.6"/>
+                                <!-- Miệng cười tinh nghịch hé lưỡi hồng -->
+                                <path d="M42,63 Q50,72 58,63" stroke="#111827" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                                <path d="M45,65 Q50,69 55,65 Q50,73 45,65 Z" fill="#f43f5e"/>
+                            </svg>
+                        </div>
+
+                        <!-- Canvas Tập Đồ chính -->
+                        <canvas id="writingCanvas" class="w-full h-full max-h-[380px] max-w-[450px] cursor-crosshair relative z-10"></canvas>
+                        
+                    </div>
+
+                    <!-- Bảng thông tin vật phẩm mầm non và phần trăm đồ thành công -->
+                    <div class="flex justify-between items-center mt-2 pt-2 border-t-2 border-dashed border-purple-300 z-10">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-purple-950">Chữ đồ:</span>
+                            <span class="text-4xl font-extrabold text-yellow-300 drop-shadow font-mono uppercase animate-pulse" id="infoLetter">A</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-yellow-100 px-3 py-1 rounded-full border border-yellow-300 shadow-sm">
+                            <span class="text-xl" id="infoEmoji">🍎</span>
+                            <span class="text-xs sm:text-sm font-black text-amber-900" id="infoWord">Quả táo</span>
+                        </div>
+                        <div class="text-right text-xs text-purple-950 font-black bg-white/50 px-3 py-1.5 rounded-full" id="progressText">
+                            Tiến độ: 0%
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Màn hình chúc mừng khi hoàn thành đổi màu ảo diệu -->
+        <div id="congratsScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 rounded-3xl z-50 transition-all duration-500 scale-0 opacity-0 pointer-events-none">
+            <div class="bg-gradient-to-b from-yellow-200 via-amber-50 to-white p-6 sm:p-8 rounded-[32px] max-w-sm sm:max-w-md w-full border-8 border-yellow-400 shadow-2xl relative transform -translate-y-2">
+                <!-- Nút đóng nhanh -->
+                <button id="btnCloseCongrats" class="absolute -top-5 -right-5 bg-red-500 hover:bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl border-4 border-white shadow-lg">×</button>
+                
+                <div class="w-20 h-20 mx-auto mb-4 bg-yellow-400 rounded-full flex items-center justify-center text-white text-4xl shadow-md border-4 border-white animate-bounce">
+                    <i class="fa-solid fa-crown animate-pulse"></i>
+                </div>
+                
+                <h2 class="text-2xl sm:text-3xl font-black text-amber-950 mb-1">BÉ THẬT XUẤT SẮC!</h2>
+                <p class="text-base sm:text-lg text-amber-800 mb-3 font-extrabold text-center uppercase" id="congratsMessage">Bé vừa đồ xong chữ in hoa "A"!</p>
+                <p class="text-xs text-gray-600 mb-5">Bạn quái vật tặng bé pháo hoa hạt 3D lấp lánh rực rỡ và vòng xoay đổi màu kỳ diệu!</p>
+
+                <div class="flex flex-col gap-2">
+                    <button id="btnNextLetter" class="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-extrabold py-3 px-5 rounded-2xl shadow-lg border-b-4 border-emerald-700 bounce-active text-base flex items-center justify-center gap-2">
+                        Chữ Cái Tiếp Theo <i class="fa-solid fa-circle-chevron-right"></i>
+                    </button>
+                    <button id="btnPlayAgain" class="w-full bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-500 hover:to-indigo-600 text-white font-bold py-2 px-5 rounded-2xl shadow-md bounce-active text-xs">
+                        Tập viết lại chữ này
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 12 CHỦ ĐIỂM MẦM NON TIẾNG VIỆT (TẤT CẢ LÀ VECTOR CHỮ IN HOA CHUẨN) ---
+        const TOPICS_DATA = [
+            {
+                name: "Bản thân",
+                icon: "fa-child",
+                color: "#ef4444",
+                letters: [
+                    {
+                        letter: "A", word: "Quả táo", emoji: "🍎",
+                        paths: [
+                            [{ x: 50, y: 22 }, { x: 30, y: 78 }], // Nét trái /
+                            [{ x: 50, y: 22 }, { x: 70, y: 78 }], // Nét phải \
+                            [{ x: 39, y: 56 }, { x: 61, y: 56 }]  // Thanh ngang -
+                        ]
+                    },
+                    {
+                        letter: "Ă", word: "Cặp sách", emoji: "🎒",
+                        paths: [
+                            [{ x: 50, y: 26 }, { x: 30, y: 80 }],
+                            [{ x: 50, y: 26 }, { x: 70, y: 80 }],
+                            [{ x: 39, y: 59 }, { x: 61, y: 59 }],
+                            [{ x: 40, y: 18 }, { x: 50, y: 22 }, { x: 60, y: 18 }] // Mũ á (á ngược)
+                        ]
+                    },
+                    {
+                        letter: "Â", word: "Cái mũ", emoji: "🧢",
+                        paths: [
+                            [{ x: 50, y: 26 }, { x: 30, y: 80 }],
+                            [{ x: 50, y: 26 }, { x: 70, y: 80 }],
+                            [{ x: 39, y: 59 }, { x: 61, y: 59 }],
+                            [{ x: 38, y: 20 }, { x: 50, y: 12 }, { x: 62, y: 20 }] // Mũ ớ (mũ xuôi)
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Trường mầm non",
+                icon: "fa-school",
+                color: "#ec4899",
+                letters: [
+                    {
+                        letter: "O", word: "Quả bóng", emoji: "⚽",
+                        paths: [
+                            [{ x: 50, y: 20 }, { x: 32, y: 28 }, { x: 25, y: 50 }, { x: 32, y: 72 }, { x: 50, y: 80 }, { x: 68, y: 72 }, { x: 75, y: 50 }, { x: 68, y: 28 }, { x: 50, y: 20 }]
+                        ]
+                    },
+                    {
+                        letter: "Ô", word: "Hộp bút", emoji: "✏️",
+                        paths: [
+                            [{ x: 50, y: 26 }, { x: 32, y: 34 }, { x: 25, y: 54 }, { x: 32, y: 74 }, { x: 50, y: 82 }, { x: 68, y: 74 }, { x: 75, y: 54 }, { x: 68, y: 34 }, { x: 50, y: 26 }],
+                            [{ x: 38, y: 20 }, { x: 50, y: 12 }, { x: 62, y: 20 }] // Mũ ô
+                        ]
+                    },
+                    {
+                        letter: "Ơ", word: "Cái nơ", emoji: "🎀",
+                        paths: [
+                            [{ x: 50, y: 23 }, { x: 32, y: 31 }, { x: 25, y: 52 }, { x: 32, y: 73 }, { x: 50, y: 81 }, { x: 68, y: 73 }, { x: 75, y: 52 }, { x: 68, y: 31 }, { x: 50, y: 23 }],
+                            [{ x: 68, y: 28 }, { x: 76, y: 22 }, { x: 73, y: 32 }] // Râu ơ
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Gia đình",
+                icon: "fa-people-roof",
+                color: "#eab308",
+                letters: [
+                    {
+                        letter: "E", word: "Em bé", emoji: "👶",
+                        paths: [
+                            [{ x: 35, y: 20 }, { x: 35, y: 80 }], // Thân đứng |
+                            [{ x: 35, y: 20 }, { x: 65, y: 20 }], // Ngang trên
+                            [{ x: 35, y: 50 }, { x: 58, y: 50 }], // Ngang giữa
+                            [{ x: 35, y: 80 }, { x: 65, y: 80 }]  // Ngang dưới
+                        ]
+                    },
+                    {
+                        letter: "Ê", word: "Chiếc cốc", emoji: "🥛",
+                        paths: [
+                            [{ x: 35, y: 25 }, { x: 35, y: 80 }],
+                            [{ x: 35, y: 25 }, { x: 65, y: 25 }],
+                            [{ x: 35, y: 52 }, { x: 58, y: 52 }],
+                            [{ x: 35, y: 80 }, { x: 65, y: 80 }],
+                            [{ x: 40, y: 18 }, { x: 50, y: 10 }, { x: 60, y: 18 }] // Mũ ê
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Nghề nghiệp",
+                icon: "fa-briefcase",
+                color: "#3b82f6",
+                letters: [
+                    {
+                        letter: "U", word: "Cái búa", emoji: "🔨",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 65 }, { x: 42, y: 80 }, { x: 58, y: 80 }, { x: 68, y: 65 }, { x: 68, y: 20 }]
+                        ]
+                    },
+                    {
+                        letter: "Ư", word: "Cái xẻng", emoji: "🥄",
+                        paths: [
+                            [{ x: 32, y: 23 }, { x: 32, y: 66 }, { x: 42, y: 81 }, { x: 58, y: 81 }, { x: 68, y: 66 }, { x: 68, y: 23 }],
+                            [{ x: 68, y: 26 }, { x: 76, y: 19 }, { x: 73, y: 30 }] // Râu ư
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Giao thông",
+                icon: "fa-car",
+                color: "#10b981",
+                letters: [
+                    {
+                        letter: "H", word: "Xe hơi", emoji: "🚗",
+                        paths: [
+                            [{ x: 30, y: 20 }, { x: 30, y: 80 }], // Thân trái
+                            [{ x: 70, y: 20 }, { x: 70, y: 80 }], // Thân phải
+                            [{ x: 30, y: 50 }, { x: 70, y: 50 }]  // Cầu ngang
+                        ]
+                    },
+                    {
+                        letter: "L", word: "Máy bay", emoji: "✈️",
+                        paths: [
+                            [{ x: 38, y: 20 }, { x: 38, y: 80 }], // Thân dọc
+                            [{ x: 38, y: 80 }, { x: 68, y: 80 }]  // Chân ngang
+                        ]
+                    },
+                    {
+                        letter: "K", word: "Thuyền buồm", emoji: "⛵",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 80 }], // Thân thẳng |
+                            [{ x: 65, y: 20 }, { x: 32, y: 50 }], // Chéo lên <
+                            [{ x: 32, y: 50 }, { x: 65, y: 80 }]  // Chéo xuống >
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Thực vật",
+                icon: "fa-seedling",
+                color: "#84cc16",
+                letters: [
+                    {
+                        letter: "B", word: "Chiếc lá", emoji: "🍃",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 80 }], // Trục thẳng |
+                            [{ x: 32, y: 20 }, { x: 55, y: 20 }, { x: 65, y: 28 }, { x: 65, y: 44 }, { x: 55, y: 50 }, { x: 32, y: 50 }], // Bụng trên
+                            [{ x: 32, y: 50 }, { x: 58, y: 50 }, { x: 68, y: 58 }, { x: 68, y: 72 }, { x: 58, y: 80 }, { x: 32, y: 80 }]  // Bụng dưới
+                        ]
+                    },
+                    {
+                        letter: "D", word: "Bông hoa", emoji: "🌸",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 80 }], // Trục đứng
+                            [{ x: 32, y: 20 }, { x: 58, y: 20 }, { x: 72, y: 35 }, { x: 72, y: 65 }, { x: 58, y: 80 }, { x: 32, y: 80 }]  // Vòng lưng cong D
+                        ]
+                    },
+                    {
+                        letter: "Đ", word: "Cây xanh", emoji: "🌳",
+                        paths: [
+                            [{ x: 35, y: 20 }, { x: 35, y: 80 }],
+                            [{ x: 35, y: 20 }, { x: 60, y: 20 }, { x: 73, y: 35 }, { x: 73, y: 65 }, { x: 60, y: 80 }, { x: 35, y: 80 }],
+                            [{ x: 22, y: 38 }, { x: 48, y: 38 }] // Gạch ngang Đ
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Tết mùa xuân",
+                icon: "fa-fireworks",
+                color: "#f43f5e",
+                letters: [
+                    {
+                        letter: "M", word: "Bánh chưng", emoji: "🍙",
+                        paths: [
+                            [{ x: 25, y: 80 }, { x: 25, y: 20 }], // Thẳng trái lên
+                            [{ x: 25, y: 20 }, { x: 50, y: 60 }], // Chéo xuống giữa
+                            [{ x: 50, y: 60 }, { x: 75, y: 20 }], // Chéo lên phải
+                            [{ x: 75, y: 20 }, { x: 75, y: 80 }]  // Thẳng phải xuống
+                        ]
+                    },
+                    {
+                        letter: "N", word: "Hoa mai", emoji: "🌼",
+                        paths: [
+                            [{ x: 28, y: 80 }, { x: 28, y: 20 }], // Lên dọc trái
+                            [{ x: 28, y: 20 }, { x: 72, y: 80 }], // Chéo xuyên
+                            [{ x: 72, y: 80 }, { x: 72, y: 20 }]  // Lên dọc phải
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Động vật",
+                icon: "fa-paw",
+                color: "#06b6d4",
+                letters: [
+                    {
+                        letter: "I", word: "Con cá", emoji: "🐟",
+                        paths: [
+                            [{ x: 50, y: 20 }, { x: 50, y: 80 }] // Thân thẳng đứng đơn giản
+                        ]
+                    },
+                    {
+                        letter: "T", word: "Con mèo", emoji: "🐱",
+                        paths: [
+                            [{ x: 25, y: 20 }, { x: 75, y: 20 }], // Ngang đầu
+                            [{ x: 50, y: 20 }, { x: 50, y: 80 }]  // Chân đứng
+                        ]
+                    },
+                    {
+                        letter: "C", word: "Con chim", emoji: "🐦",
+                        paths: [
+                            [{ x: 68, y: 30 }, { x: 50, y: 20 }, { x: 32, y: 32 }, { x: 26, y: 50 }, { x: 32, y: 68 }, { x: 50, y: 80 }, { x: 68, y: 70 }]
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Nước",
+                icon: "fa-droplet",
+                color: "#2563eb",
+                letters: [
+                    {
+                        letter: "P", word: "Giọt nước", emoji: "💧",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 80 }], // Trục thẳng |
+                            [{ x: 32, y: 20 }, { x: 60, y: 20 }, { x: 68, y: 30 }, { x: 68, y: 44 }, { x: 60, y: 52 }, { x: 32, y: 52 }] // Bụng cong P
+                        ]
+                    },
+                    {
+                        letter: "Q", word: "Đám mây", emoji: "☁️",
+                        paths: [
+                            [{ x: 50, y: 22 }, { x: 32, y: 30 }, { x: 25, y: 50 }, { x: 32, y: 70 }, { x: 50, y: 78 }, { x: 68, y: 70 }, { x: 75, y: 50 }, { x: 68, y: 30 }, { x: 50, y: 22 }],
+                            [{ x: 55, y: 65 }, { x: 75, y: 85 }] // Chân xiên chéo Q
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Hiện tượng tự nhiên",
+                icon: "fa-cloud-sun",
+                color: "#f97316",
+                letters: [
+                    {
+                        letter: "G", word: "Mặt trời", emoji: "☀️",
+                        paths: [
+                            [{ x: 68, y: 32 }, { x: 52, y: 20 }, { x: 34, y: 32 }, { x: 28, y: 50 }, { x: 34, y: 68 }, { x: 52, y: 80 }, { x: 68, y: 70 }, { x: 68, y: 50 }, { x: 50, y: 50 }]
+                        ]
+                    },
+                    {
+                        letter: "Y", word: "Cầu vồng", emoji: "🌈",
+                        paths: [
+                            [{ x: 25, y: 20 }, { x: 50, y: 48 }], // Cánh trái xiên xuống
+                            [{ x: 75, y: 20 }, { x: 50, y: 48 }], // Cánh phải xiên xuống
+                            [{ x: 50, y: 48 }, { x: 50, y: 80 }]  // Thân dọc dưới
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Quê hương đất nước",
+                icon: "fa-flag",
+                color: "#dc2626",
+                letters: [
+                    {
+                        letter: "S", word: "Lá cờ đỏ", emoji: "🇻🇳",
+                        paths: [
+                            [{ x: 66, y: 28 }, { x: 50, y: 20 }, { x: 34, y: 28 }, { x: 34, y: 42 }, { x: 50, y: 50 }, { x: 66, y: 58 }, { x: 66, y: 72 }, { x: 50, y: 80 }, { x: 32, y: 72 }]
+                        ]
+                    },
+                    {
+                        letter: "X", word: "Bản đồ", emoji: "🗺️",
+                        paths: [
+                            [{ x: 28, y: 20 }, { x: 72, y: 80 }], // Xiên chéo trái qua phải
+                            [{ x: 72, y: 20 }, { x: 28, y: 80 }]  // Xiên chéo phải qua trái
+                        ]
+                    }
+                ]
+            },
+            {
+                name: "Bác Hồ",
+                icon: "fa-sun",
+                color: "#db2777",
+                letters: [
+                    {
+                        letter: "V", word: "Đóa sen hồng", emoji: "🌸",
+                        paths: [
+                            [{ x: 25, y: 20 }, { x: 50, y: 80 }, { x: 75, y: 20 }] // Vẽ liên tục xiên xuống rồi lên
+                        ]
+                    },
+                    {
+                        letter: "R", word: "Lăng Bác", emoji: "🏛️",
+                        paths: [
+                            [{ x: 32, y: 20 }, { x: 32, y: 80 }], // Trục thẳng đứng
+                            [{ x: 32, y: 20 }, { x: 60, y: 20 }, { x: 68, y: 28 }, { x: 68, y: 44 }, { x: 60, y: 52 }, { x: 32, y: 52 }], // Bụng trên
+                            [{ x: 48, y: 52 }, { x: 68, y: 80 }]  // Chân xiên phải
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // --- TRẠNG THÁI TRÒ CHƠI ---
+        let currentTopicIndex = 0;
+        let currentLetterIndex = 0;
+        let soundEnabled = true;
+        
+        let currentPathIndex = 0;
+        let currentPointIndex = 0;
+        let isDrawing = false;
+        let drawnPoints = [];
+        let scorePercent = 0;
+        
+        let isDemoRunning = false;
+        let demoTimeout = null;
+        let isComplete = false;
+
+        // --- LẤY PHẦN TỬ DOM ---
+        const canvas = document.getElementById('writingCanvas');
+        const ctx = canvas.getContext('2d');
+        const charGuide = document.getElementById('characterGuide');
+        const rideEmoji = document.getElementById('rideEmoji');
+        const rideItem = document.getElementById('rideItem');
+        
+        const infoLetter = document.getElementById('infoLetter');
+        const infoEmoji = document.getElementById('infoEmoji');
+        const infoWord = document.getElementById('infoWord');
+        const progressText = document.getElementById('progressText');
+        const headerLetter = document.getElementById('headerLetter');
+        const headerTopicName = document.getElementById('headerTopicName');
+        
+        const btnDemo = document.getElementById('btnDemo');
+        const btnReset = document.getElementById('btnReset');
+        const btnSound = document.getElementById('btnSound');
+        const soundIcon = document.getElementById('soundIcon');
+        
+        const congratsScreen = document.getElementById('congratsScreen');
+        const btnCloseCongrats = document.getElementById('btnCloseCongrats');
+        const btnNextLetter = document.getElementById('btnNextLetter');
+        const btnPlayAgain = document.getElementById('btnPlayAgain');
+        const congratsMessage = document.getElementById('congratsMessage');
+        const guidingArrow = document.getElementById('guidingArrow');
+
+        // --- CĂN CHỈNH KÍCH THƯỚC CANVAS ĐỒ HỌA ---
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            drawGame();
+        }
+
+        function getCanvasCoords(pctPoint) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (pctPoint.x / 100) * rect.width,
+                y: (pctPoint.y / 100) * rect.height
+            };
+        }
+
+        // --- HỆ THỐNG PHÁT ÂM TIẾNG VIỆT (WEB SPEECH API) ---
+        function speakWord(textToSpeak) {
+            if (!soundEnabled) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'vi-VN';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.3;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playChimeEffect() {
+            if (!soundEnabled) return;
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50]; // Âm giai tươi vui mầm non
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                }, index * 80);
+            });
+        }
+
+        // --- KHỞI TẠO 12 CHỦ ĐIỂM SƯ TIỂU HỌC ---
+        function initTopicsMenu() {
+            const container = document.getElementById('topicsMenuContainer');
+            container.innerHTML = '';
+            
+            TOPICS_DATA.forEach((topic, index) => {
+                const btn = document.createElement('button');
+                const isSelected = (index === currentTopicIndex);
+                
+                btn.className = `flex items-center gap-2 p-2 rounded-xl text-left w-full transition-all duration-300 border-2 bounce-active flex-shrink-0 lg:w-auto ${
+                    isSelected 
+                    ? 'bg-yellow-200 border-yellow-400 text-yellow-950 font-black shadow-lg scale-102' 
+                    : 'bg-[#5e2d10] border-transparent text-orange-100 hover:bg-[#783b16]'
+                }`;
+                
+                // Hiển thị: Chủ đề + Biểu tượng + Tên chủ điểm
+                btn.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style="background-color: ${topic.color}">
+                        <i class="fa-solid ${topic.icon}"></i>
+                    </div>
+                    <div class="flex-1 truncate lg:block hidden">
+                        <div class="text-[9px] text-orange-300 font-bold uppercase">Chủ điểm ${index + 1}</div>
+                        <div class="font-extrabold text-xs tracking-tight">${topic.name}</div>
+                    </div>
+                    <div class="lg:hidden block text-center font-bold px-2">${topic.name}</div>
+                `;
+                
+                btn.onclick = () => {
+                    if (isDemoRunning) stopDemo();
+                    selectTopic(index);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Chọn một chủ điểm
+        function selectTopic(index) {
+            currentTopicIndex = index;
+            currentLetterIndex = 0; // Quay về chữ cái đầu tiên của chủ điểm
+            initTopicsMenu();
+            renderLetterSubMenu();
+            loadActiveLetter();
+        }
+
+        // Quay về trang đầu tiên (Home)
+        function goHome() {
+            if (isDemoRunning) stopDemo();
+            selectTopic(0);
+        }
+
+        // Hiển thị danh mục chữ cái con trong một chủ điểm
+        function renderLetterSubMenu() {
+            const container = document.getElementById('letterSubMenu');
+            container.innerHTML = '';
+            
+            const topic = TOPICS_DATA[currentTopicIndex];
+            topic.letters.forEach((lObj, idx) => {
+                const btn = document.createElement('button');
+                const isSelected = (idx === currentLetterIndex);
+                btn.className = `w-12 h-12 rounded-full font-serif font-black text-2xl flex items-center justify-center transition-all duration-300 border-4 shadow-md bounce-active ${
+                    isSelected 
+                    ? 'bg-yellow-300 text-purple-950 border-white scale-110' 
+                    : 'bg-purple-900/60 text-purple-100 border-transparent hover:bg-purple-800'
+                }`;
+                btn.textContent = lObj.letter.toUpperCase(); // Hiển thị In Hoa chuẩn mực
+                btn.onclick = () => {
+                    if (isDemoRunning) stopDemo();
+                    currentLetterIndex = idx;
+                    renderLetterSubMenu();
+                    loadActiveLetter();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Tải thông tin chữ cái đang được lựa chọn
+        function loadActiveLetter() {
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            
+            // Cập nhật text tiêu đề và nhãn
+            headerLetter.textContent = activeLetterObj.letter.toUpperCase();
+            headerTopicName.textContent = `Chủ điểm: ${topic.name}`;
+            infoLetter.textContent = activeLetterObj.letter.toUpperCase();
+            infoEmoji.textContent = activeLetterObj.emoji;
+            infoWord.textContent = activeLetterObj.word;
+            
+            // Đặt biểu tượng cưỡi của quái vật xanh
+            rideEmoji.textContent = activeLetterObj.emoji;
+            rideItem.style.backgroundColor = topic.color;
+
+            resetGame();
+
+            // Phát âm mẫu: "Chữ IN HOA ... - ..."
+            speakWord(`Chữ in hoa ${activeLetterObj.letter}. ${activeLetterObj.word}`);
+            
+            // Kích hoạt tự vẽ mẫu (Demo) tự động mỗi khi tải trang chữ cái mới như yêu cầu đề ra
+            setTimeout(() => {
+                if (!isComplete && !isDrawing) {
+                    playDemo();
+                }
+            }, 1000);
+        }
+
+        // --- LÀM LẠI CHỮ CÁI ---
+        function resetGame() {
+            isComplete = false;
+            currentPathIndex = 0;
+            currentPointIndex = 0;
+            isDrawing = false;
+            drawnPoints = [];
+            scorePercent = 0;
+            
+            canvas.classList.remove('rainbow-active');
+            charGuide.classList.remove('rainbow-active');
+            
+            progressText.textContent = "Tiến độ: 0%";
+            progressText.className = "text-right text-xs text-purple-950 font-black bg-white/50 px-3 py-1.5 rounded-full";
+            
+            moveMonsterToTarget();
+            drawGame();
+        }
+
+        // Di chuyển quái vật xanh & chỉ hướng theo tọa độ mốc
+        function moveMonsterToTarget() {
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            if (!activeLetterObj.paths[currentPathIndex]) return;
+            
+            const targetPoint = activeLetterObj.paths[currentPathIndex][currentPointIndex];
+            const coords = getCanvasCoords(targetPoint);
+            
+            // Quái vật xanh dắt tay bám theo nét
+            charGuide.style.left = `${coords.x}px`;
+            charGuide.style.top = `${coords.y}px`;
+            
+            // Mũi tên đỏ chỉ hướng dắt ngón tay đồ nét nhấp nháy đỏ
+            guidingArrow.style.left = `${coords.x}px`;
+            guidingArrow.style.top = `${coords.y}px`;
+            guidingArrow.style.display = 'block';
+        }
+
+        // --- VẼ TOÀN BỘ PHẦN CHỮ CÁI, ĐƯỜNG MỜ LÀM NỀN ---
+        function drawGame() {
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // 1. Vẽ nền mờ nét chữ cái in hoa to để làm hướng dẫn
+            activeLetterObj.paths.forEach((path) => {
+                if (path.length < 1) return;
+                
+                ctx.beginPath();
+                const start = getCanvasCoords(path[0]);
+                ctx.moveTo(start.x, start.y);
+                
+                for (let i = 1; i < path.length; i++) {
+                    const next = getCanvasCoords(path[i]);
+                    ctx.lineTo(next.x, next.y);
+                }
+                
+                // Nét mờ xám chuẩn mầm non
+                ctx.strokeStyle = '#f1f5f9';
+                ctx.lineWidth = 30; // To bản dễ đồ
+                ctx.stroke();
+
+                // Lõi nét đứt dắt tay
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([8, 6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            });
+
+            // 2. Vẽ tất cả các điểm mốc đồ nét tròn
+            activeLetterObj.paths.forEach((path, pIdx) => {
+                path.forEach((pt, ptIdx) => {
+                    const coords = getCanvasCoords(pt);
+                    const isNextTarget = (pIdx === currentPathIndex && ptIdx === currentPointIndex);
+                    
+                    ctx.beginPath();
+                    ctx.arc(coords.x, coords.y, isNextTarget ? 10 : 5, 0, Math.PI * 2);
+                    ctx.fillStyle = isNextTarget ? '#ef4444' : '#94a3b8';
+                    ctx.fill();
+                    
+                    if (isNextTarget) {
+                        ctx.beginPath();
+                        ctx.arc(coords.x, coords.y, 16, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+                        ctx.lineWidth = 2.5;
+                        ctx.stroke();
+                    }
+                });
+            });
+
+            // 3. Vẽ các nét vẽ mà trẻ đã đi hoàn thành xuất sắc
+            if (drawnPoints.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(drawnPoints[0].x, drawnPoints[0].y);
+                
+                for (let i = 1; i < drawnPoints.length; i++) {
+                    if (drawnPoints[i].breakPath) {
+                        ctx.strokeStyle = topic.color;
+                        ctx.lineWidth = 22;
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(drawnPoints[i].x, drawnPoints[i].y);
+                    } else {
+                        ctx.lineTo(drawnPoints[i].x, drawnPoints[i].y);
+                    }
+                }
+                
+                ctx.strokeStyle = isComplete ? 'transparent' : topic.color; 
+                ctx.lineWidth = 22;
+                ctx.stroke();
+            }
+
+            // 4. Nếu đã hoàn thành, bừng sáng màu của chủ điểm
+            if (isComplete) {
+                activeLetterObj.paths.forEach((path) => {
+                    ctx.beginPath();
+                    const start = getCanvasCoords(path[0]);
+                    ctx.moveTo(start.x, start.y);
+                    for (let i = 1; i < path.length; i++) {
+                        const next = getCanvasCoords(path[i]);
+                        ctx.lineTo(next.x, next.y);
+                    }
+                    ctx.strokeStyle = topic.color;
+                    ctx.lineWidth = 22;
+                    ctx.stroke();
+                });
+            }
+        }
+
+        // --- CHẾ ĐỘ TỰ VẼ MẪU (DEMO) ---
+        function playDemo() {
+            if (isDemoRunning) return;
+            isDemoRunning = true;
+            btnDemo.innerHTML = `<i class="fa-solid fa-face-grin-stars animate-spin"></i> Đang Demo...`;
+            btnDemo.className = `bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-extrabold py-2 px-4 rounded-full shadow-lg border-b-4 border-orange-700 bounce-active text-xs sm:text-sm flex items-center gap-1.5`;
+            
+            // Thiết lập lại trạng thái trước khi vẽ mẫu
+            isComplete = false;
+            currentPathIndex = 0;
+            currentPointIndex = 0;
+            isDrawing = false;
+            drawnPoints = [];
+            scorePercent = 0;
+            
+            canvas.classList.remove('rainbow-active');
+            charGuide.classList.remove('rainbow-active');
+            
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            
+            let pathIdx = 0;
+            let pointIdx = 0;
+            drawnPoints = [];
+
+            speakWord(`Bé xem quái vật xanh tự vẽ mẫu chữ ${activeLetterObj.letter}`);
+
+            function animateDemoStep() {
+                if (!isDemoRunning) return;
+
+                const currentPath = activeLetterObj.paths[pathIdx];
+                if (!currentPath) {
+                    stopDemo();
+                    triggerLetterCompletion();
+                    return;
+                }
+
+                const pt = currentPath[pointIdx];
+                const coords = getCanvasCoords(pt);
+
+                if (pointIdx === 0) {
+                    drawnPoints.push({ x: coords.x, y: coords.y, breakPath: true });
+                } else {
+                    drawnPoints.push({ x: coords.x, y: coords.y });
+                }
+
+                charGuide.style.left = `${coords.x}px`;
+                charGuide.style.top = `${coords.y}px`;
+                guidingArrow.style.left = `${coords.x}px`;
+                guidingArrow.style.top = `${coords.y}px`;
+
+                const totalPoints = activeLetterObj.paths.reduce((acc, p) => acc + p.length, 0);
+                const currentProgress = drawnPoints.length;
+                scorePercent = Math.min(Math.round((currentProgress / totalPoints) * 100), 100);
+                progressText.textContent = `Demo: ${scorePercent}%`;
+
+                drawGame();
+
+                pointIdx++;
+                if (pointIdx >= currentPath.length) {
+                    pathIdx++;
+                    pointIdx = 0;
+                }
+
+                demoTimeout = setTimeout(animateDemoStep, 450);
+            }
+
+            animateDemoStep();
+        }
+
+        function stopDemo() {
+            isDemoRunning = false;
+            if (demoTimeout) clearTimeout(demoTimeout);
+            btnDemo.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Xem Mẫu (Demo)`;
+            btnDemo.className = "bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-extrabold py-2 px-4 rounded-full shadow-lg border-b-4 border-green-700 bounce-active text-xs sm:text-sm flex items-center gap-1.5";
+        }
+
+        // --- XỬ LÝ ĐỒ NÉT CHO TRẺ (MỌI HOẠT ĐỘNG CHUỘT / CẢM ỨNG) ---
+        function checkTracingPoint(clientX, clientY) {
+            if (isComplete) return;
+            
+            // Nếu trẻ chạm đồ nét thì tự động dừng chế độ Demo để nhường bé tự lập viết
+            if (isDemoRunning) {
+                stopDemo();
+                resetGame();
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            const currentPath = activeLetterObj.paths[currentPathIndex];
+            if (!currentPath) return;
+
+            const targetPoint = currentPath[currentPointIndex];
+            const targetCoords = getCanvasCoords(targetPoint);
+
+            const dist = Math.hypot(mouseX - targetCoords.x, mouseY - targetCoords.y);
+            
+            // Trẻ em chỉ cần di trong khoảng cách < 38px (Rất dễ đồ)
+            if (dist < 38) {
+                if (currentPointIndex === 0) {
+                    drawnPoints.push({ x: targetCoords.x, y: targetCoords.y, breakPath: true });
+                    speakWord("Cố lên bé ơi!");
+                } else {
+                    drawnPoints.push({ x: targetCoords.x, y: targetCoords.y });
+                }
+
+                charGuide.style.left = `${targetCoords.x}px`;
+                charGuide.style.top = `${targetCoords.y}px`;
+
+                currentPointIndex++;
+
+                const totalPoints = activeLetterObj.paths.reduce((acc, p) => acc + p.length, 0);
+                const currentProgress = drawnPoints.length;
+                scorePercent = Math.min(Math.round((currentProgress / totalPoints) * 100), 100);
+                
+                progressText.textContent = `Bé đồ: ${scorePercent}%`;
+
+                if (currentPointIndex >= currentPath.length) {
+                    currentPathIndex++;
+                    currentPointIndex = 0;
+                    
+                    if (currentPathIndex >= activeLetterObj.paths.length) {
+                        triggerLetterCompletion();
+                    } else {
+                        speakWord("Nét tiếp theo!");
+                        moveMonsterToTarget();
+                    }
+                } else {
+                    moveMonsterToTarget();
+                }
+
+                drawGame();
+            }
+        }
+
+        // --- KHOẢNH KHẮC HOÀN THÀNH KỲ DIỆU (CẦU VỒNG + PHÁO HOA) ---
+        function triggerLetterCompletion() {
+            isComplete = true;
+            guidingArrow.style.display = 'none';
+            
+            // Bừng sáng chu kỳ đổi màu cầu vồng của chữ cái và quái vật xanh lá
+            canvas.classList.add('rainbow-active');
+            charGuide.classList.add('rainbow-active');
+            
+            progressText.textContent = "BÉ GIỎI QUÁ! 🎉";
+            progressText.className = "text-right text-xs text-yellow-500 font-extrabold animate-bounce bg-white/70 px-3 py-1.5 rounded-full";
+            
+            const topic = TOPICS_DATA[currentTopicIndex];
+            const activeLetterObj = topic.letters[currentLetterIndex];
+            speakWord(`Chúc mừng bé đã viết xong chữ in hoa ${activeLetterObj.letter}! ${activeLetterObj.word}.`);
+
+            // Nổ pháo hoa và phát âm lấp lánh
+            startFireworkBurst();
+            playChimeEffect();
+
+            // Hiện bảng chúc mừng đẹp mắt
+            setTimeout(() => {
+                congratsMessage.innerHTML = `Bé học chữ in hoa "<span class="text-indigo-600 font-black font-serif uppercase">${activeLetterObj.letter}</span>" - ${activeLetterObj.emoji} ${activeLetterObj.word} rất giỏi!`;
+                congratsScreen.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+                congratsScreen.classList.add('scale-100', 'opacity-100');
+            }, 1400);
+
+            drawGame();
+        }
+
+        // --- HIỆU ỨNG PHÁO HOA CHUYÊN NGHIỆP ---
+        const fwCanvas = document.getElementById('fireworksCanvas');
+        const fwCtx = fwCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId = null;
+
+        function resizeFireworksCanvas() {
+            fwCanvas.width = window.innerWidth;
+            fwCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeFireworksCanvas);
+        resizeFireworksCanvas();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 3;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed - 1.5;
+                this.radius = Math.random() * 3 + 1.5;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.012 + 0.008;
+                this.gravity = 0.12;
+            }
+
+            draw() {
+                fwCtx.save();
+                fwCtx.globalAlpha = this.alpha;
+                fwCtx.beginPath();
+                fwCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                fwCtx.fillStyle = this.color;
+                fwCtx.shadowBlur = 8;
+                fwCtx.shadowColor = this.color;
+                fwCtx.fill();
+                fwCtx.restore();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.alpha -= this.decay;
+            }
+        }
+
+        function startFireworkBurst() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            particles = [];
+
+            let burstCount = 5;
+            function launchBurst() {
+                if (!isComplete) return;
+                const startX = Math.random() * (window.innerWidth * 0.7) + (window.innerWidth * 0.15);
+                const startY = Math.random() * (window.innerHeight * 0.5) + (window.innerHeight * 0.2);
+                const hue = Math.floor(Math.random() * 360);
+                const color = `hsla(${hue}, 100%, 60%, 1)`;
+
+                for (let i = 0; i < 60; i++) {
+                    particles.push(new Particle(startX, startY, color));
+                }
+
+                burstCount--;
+                if (burstCount > 0) setTimeout(launchBurst, 400);
+            }
+
+            launchBurst();
+            animateParticles();
+        }
+
+        function animateParticles() {
+            fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+            if (particles.length > 0 || isComplete) {
+                animationFrameId = requestAnimationFrame(animateParticles);
+            }
+        }
+
+        // --- SỰ KIỆN TƯƠNG TÁC CHẠY GAME ---
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            checkTracingPoint(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) checkTracingPoint(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+
+        // Touch event cho Ipad và các thiết bị cảm ứng điện thoại thông minh
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const touch = e.touches[0];
+            checkTracingPoint(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDrawing) {
+                const touch = e.touches[0];
+                checkTracingPoint(touch.clientX, touch.clientY);
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+        // --- SỰ KIỆN CỦA CÁC PHÍM GIAO DIỆN ---
+        btnDemo.onclick = () => {
+            if (isDemoRunning) {
+                stopDemo();
+                resetGame();
+            } else {
+                playDemo();
+            }
+        };
+
+        btnReset.onclick = () => {
+            if (isDemoRunning) stopDemo();
+            resetGame();
+        };
+
+        btnSound.onclick = () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                soundIcon.className = 'fa-solid fa-volume-high';
+                btnSound.className = 'bg-gradient-to-r from-sky-400 to-blue-500 text-white font-bold p-2 rounded-full shadow-lg bounce-active w-9 h-9 flex items-center justify-center';
+                speakWord("Bật âm thanh");
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark';
+                btnSound.className = 'bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold p-2 rounded-full shadow-lg bounce-active w-9 h-9 flex items-center justify-center';
+            }
+        };
+
+        btnCloseCongrats.onclick = () => {
+            congratsScreen.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+            congratsScreen.classList.remove('scale-100', 'opacity-100');
+        };
+
+        btnPlayAgain.onclick = () => {
+            btnCloseCongrats.onclick();
+            resetGame();
+        };
+
+        btnNextLetter.onclick = () => {
+            btnCloseCongrats.onclick();
+            const topic = TOPICS_DATA[currentTopicIndex];
+            
+            if (currentLetterIndex + 1 < topic.letters.length) {
+                // Sang chữ cái tiếp theo trong cùng một chủ điểm
+                currentLetterIndex++;
+            } else {
+                // Sang chủ điểm tiếp theo
+                currentTopicIndex = (currentTopicIndex + 1) % TOPICS_DATA.length;
+                currentLetterIndex = 0;
+            }
+            
+            initTopicsMenu();
+            renderLetterSubMenu();
+            loadActiveLetter();
+        };
+
+        // --- CHẠY GAME LẦN ĐẦU TIÊN ---
+        window.onload = () => {
+            resizeCanvas();
+            initTopicsMenu();
+            selectTopic(0); // Mở chủ điểm Bản Thân (A, Ă, Â) đầu tiên
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                moveMonsterToTarget();
+            });
+        };
+    </script>
+</body>
+</html>
