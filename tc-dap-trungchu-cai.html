@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đại Nhạc Hội Đập Trứng Học Chữ Cái Tiếng Việt 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Chilanka&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            user-select: none;
+            overflow: hidden;
+        }
+        .title-font {
+            font-family: 'Chilanka', cursive;
+        }
+        /* Hiệu ứng nhịp đập dịu dàng cho UI */
+        @keyframes gentle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .pulse-ui {
+            animation: gentle-pulse 3s ease-in-out infinite;
+        }
+        /* Kéo thả bóng đen */
+        .drag-item {
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .shadow-target {
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        /* Tự động ẩn thanh cuộn nhưng vẫn cuộn được */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-sky-300 via-indigo-100 to-emerald-100 h-screen w-screen flex flex-col justify-between relative overflow-hidden">
+
+    <!-- CANVAS PHÔNG NỀN 3D -->
+    <div id="canvas-container" class="absolute inset-0 z-0 pointer-events-auto"></div>
+
+    <!-- TOÀN BỘ GIAO DIỆN TƯƠNG TÁC CHÍNH -->
+    <div class="relative z-10 w-full h-full flex flex-col justify-between p-3 md:p-4 pointer-events-none">
+        
+        <!-- THANH ĐẦU TRANG (HEADER) -->
+        <header class="w-full flex justify-between items-center pointer-events-auto gap-2">
+            <!-- Nút Chọn Chủ Điểm -->
+            <button id="btn-open-map" class="bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border-2 border-emerald-400 text-emerald-700 font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition">
+                <i data-lucide="map"></i>
+                <span class="text-xs md:text-sm hidden sm:inline">Bản Đồ Chủ Điểm</span>
+            </button>
+
+            <!-- Tiêu Đề Trung Tâm -->
+            <div class="bg-white/95 backdrop-blur-md px-6 py-2 rounded-2xl border-4 border-amber-400 shadow-xl text-center flex flex-col items-center">
+                <span id="current-theme-tag" class="text-[10px] md:text-xs font-bold text-amber-600 uppercase tracking-widest">CHỦ ĐIỂM: BẢN THÂN</span>
+                <h1 id="current-stage-title" class="title-font text-lg md:text-2xl font-extrabold text-emerald-700 leading-none mt-0.5">Học Chữ Cái A - a</h1>
+            </div>
+
+            <!-- Điều Khiển Âm Thanh & Tiến Trình -->
+            <div class="flex items-center gap-2">
+                <button id="btn-sound-toggle" class="bg-white/90 backdrop-blur-md p-2.5 rounded-2xl shadow-lg border-2 border-sky-400 text-sky-700 hover:scale-105 active:scale-95 transition">
+                    <i id="sound-icon" data-lucide="volume-2"></i>
+                </button>
+                <div class="bg-white/90 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border-2 border-pink-400 text-center text-xs font-bold text-pink-600 hidden sm:block">
+                    🥚 Đã đập: <span id="cracked-count" class="text-sm text-pink-700 font-extrabold">0/2</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- KHU VỰC THÔNG BÁO HƯỚNG DẪN / TRẠNG THÁI -->
+        <div class="w-full flex justify-center my-1 pointer-events-auto">
+            <div id="bubble-guide" class="bg-emerald-600/90 text-white font-bold text-xs md:text-sm px-5 py-2 rounded-full shadow-lg border border-emerald-400 flex items-center gap-2 animate-bounce">
+                <span>✨</span> <span id="guide-text">Bé hãy nhấp đập quả trứng màu vàng để giải cứu chữ cái nhé!</span>
+            </div>
+        </div>
+
+        <!-- KHU VỰC TRÒ CHƠI NỐI BÓNG ĐÊN (SHADOW MATCHING BOARD) -->
+        <footer class="w-full max-w-4xl mx-auto bg-white/95 backdrop-blur-md rounded-3xl p-3 md:p-4 shadow-2xl border-4 border-indigo-400 pointer-events-auto flex flex-col md:flex-row gap-4 items-center justify-between mb-2">
+            <div class="flex items-center gap-2 text-indigo-800">
+                <div class="bg-indigo-100 p-2 rounded-xl">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs md:text-sm font-extrabold uppercase tracking-wider">Trò chơi nối bóng đen</h3>
+                    <p class="text-[11px] text-indigo-600">Kéo chữ cái vào đúng hình bóng đen mờ để hoàn thành!</p>
+                </div>
+            </div>
+
+            <!-- Vùng Chữ cái Kéo - Thả -->
+            <div class="flex items-center gap-8 md:gap-12 bg-indigo-50/50 p-2.5 rounded-2xl border-2 border-dashed border-indigo-200 w-full md:w-auto justify-around">
+                <!-- Vật kéo chữ lớn -->
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold text-gray-500">Chữ:</span>
+                    <div id="drag-upper" draggable="true" class="drag-item w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-amber-400 to-orange-500 text-white text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center shadow-lg border-b-4 border-orange-700 transform hover:scale-105 active:scale-95 active:rotate-3">A</div>
+                    <div id="drag-lower" draggable="true" class="drag-item w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-sky-400 to-blue-500 text-white text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center shadow-lg border-b-4 border-blue-700 transform hover:scale-105 active:scale-95 active:rotate-3">a</div>
+                </div>
+
+                <!-- Đường chia dọc -->
+                <div class="h-8 w-0.5 bg-indigo-200 hidden md:block"></div>
+
+                <!-- Bóng mục tiêu -->
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-bold text-gray-500">Bóng:</span>
+                    <!-- Bóng chữ hoa -->
+                    <div id="target-upper" data-match="upper" class="shadow-target w-14 h-14 md:w-16 md:h-16 bg-slate-300 text-slate-500/40 text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center border-4 border-dashed border-slate-400 relative">
+                        <span>A</span>
+                        <div class="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center text-transparent">?</div>
+                    </div>
+                    <!-- Bóng chữ thường -->
+                    <div id="target-lower" data-match="lower" class="shadow-target w-14 h-14 md:w-16 md:h-16 bg-slate-300 text-slate-500/40 text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center border-4 border-dashed border-slate-400 relative">
+                        <span>a</span>
+                        <div class="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center text-transparent">?</div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- PANEL CHỌN BẢN ĐỒ CHỦ ĐIỂM (OVERLAY MAP DIALOG) -->
+    <div id="map-modal" class="hidden absolute inset-0 z-40 bg-indigo-950/80 backdrop-blur-md flex justify-center items-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-5xl h-[85vh] border-8 border-amber-400 shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+            <!-- Header Bản đồ -->
+            <div class="bg-gradient-to-r from-amber-400 to-orange-500 p-5 text-center relative">
+                <h2 class="title-font text-2xl md:text-4xl font-black text-white drop-shadow">Hành Trình Khám Phá Chữ Cái Việt Nam</h2>
+                <p class="text-white/90 text-xs md:text-sm font-bold mt-1">Bé hãy chọn một chủ điểm dưới đây để bắt đầu bài học kì thú nhé!</p>
+                <button id="btn-close-map" class="absolute top-4 right-4 w-10 h-10 bg-white/90 hover:bg-white text-orange-600 rounded-full font-black text-xl flex items-center justify-center shadow transition hover:scale-105 active:scale-95">✕</button>
+            </div>
+
+            <!-- Grid Danh Sách 12 Chủ Điểm -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 no-scrollbar">
+                <!-- Danh sách 12 chủ điểm sẽ được dựng tự động bằng Javascript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL THẺ CHỮ CÁI TƯƠNG TÁC CHI TIẾT (INTERACTIVE DETAIL OVERLAY) -->
+    <div id="detail-modal" class="hidden absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center p-4">
+        <div class="bg-white rounded-[3rem] shadow-2xl max-w-md w-full border-8 border-sky-400 flex flex-col items-center p-6 relative overflow-hidden">
+            <!-- Nón lá trang trí mờ -->
+            <div class="absolute -top-10 -right-10 opacity-10 w-32 h-32">
+                <svg viewBox="0 0 100 100" class="fill-sky-800"><polygon points="50,10 10,90 90,90"/></svg>
+            </div>
+
+            <button id="btn-close-detail" class="absolute top-4 right-4 w-10 h-10 bg-red-100 hover:bg-red-200 text-red-600 rounded-full font-extrabold text-lg flex items-center justify-center transition border border-red-300">✕</button>
+
+            <span id="detail-type-badge" class="bg-sky-100 text-sky-800 text-xs font-bold px-3 py-1 rounded-full border border-sky-300 uppercase tracking-wide">Chữ in thường</span>
+            
+            <!-- Chữ cái khổng lồ đổi màu khi rê tay -->
+            <div id="detail-giant-letter" class="text-[9rem] font-black my-2 transition-all duration-300 transform hover:scale-110 hover:rotate-6 select-none cursor-pointer leading-none">A</div>
+            
+            <p class="text-[11px] text-gray-400 mb-3 animate-pulse">👉 Di chuột hoặc chạm vào chữ cái để đổi màu kỳ diệu!</p>
+
+            <!-- Hình ảnh minh họa & Từ vựng chứa chữ cái -->
+            <div class="w-full bg-emerald-50 rounded-2xl p-4 border border-emerald-200 flex flex-col items-center">
+                <div id="detail-svg-container" class="w-36 h-36 flex items-center justify-center bg-white rounded-full p-2 shadow-inner">
+                    <!-- SVG Minh họa -->
+                </div>
+                <!-- Cụm từ vựng tương tác -->
+                <div class="mt-4 text-center">
+                    <div id="detail-word-highlight" class="text-2xl md:text-3xl font-black text-gray-700 tracking-wide select-none">
+                        <!-- Chèn chữ cái đổi màu tự động -->
+                    </div>
+                    <p id="detail-word-desc" class="text-xs text-gray-500 font-semibold mt-1.5 px-2">Bản thân bé có đôi tai thính nhạy để nghe cô giáo giảng bài.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 w-full mt-4">
+                <button id="btn-voice-letter" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 px-4 rounded-xl shadow-md border-b-4 border-sky-700 hover:scale-[1.02] active:scale-95 transition text-xs md:text-sm flex items-center justify-center gap-1">
+                    🔊 Đọc Chữ
+                </button>
+                <button id="btn-voice-word" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-3 px-4 rounded-xl shadow-md border-b-4 border-emerald-700 hover:scale-[1.02] active:scale-95 transition text-xs md:text-sm flex items-center justify-center gap-1">
+                    🔊 Đọc Từ Vựng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH CHÀO MỪNG / HƯỚNG DẪN ĐẦU TIÊN -->
+    <div id="welcome-screen" class="absolute inset-0 z-50 bg-gradient-to-br from-emerald-600/95 via-teal-600/90 to-yellow-500/95 flex flex-col justify-center items-center p-4">
+        <div class="bg-white rounded-[3rem] p-8 max-w-xl w-full border-8 border-yellow-400 text-center shadow-2xl relative floating-ui">
+            <h2 class="title-font text-3xl md:text-5xl font-black text-emerald-700 mb-2">Đập Trứng Học Chữ Cái</h2>
+            <p class="text-amber-600 font-bold text-base md:text-lg mb-4">Phát triển ngôn ngữ & Tư duy logic 3D</p>
+
+            <div class="bg-amber-50 rounded-2xl p-4 border-2 border-dashed border-amber-200 text-left text-xs md:text-sm text-amber-900 mb-6 space-y-2">
+                <p class="font-bold text-amber-800">🌟 Cách chơi dành cho bé:</p>
+                <p>💡 **Bước 1:** Đập vỡ **2 quả trứng vàng** trên màn hình để tìm chữ **In hoa** và **In thường**.</p>
+                <p>💡 **Bước 2:** Chạm tay vào chữ cái khổng lồ để biến đổi màu sắc thần kỳ & nghe phát âm.</p>
+                <p>💡 **Bước 3:** Hoàn thành trò chơi **Nối bóng đen** bằng cách kéo chữ cái vào đúng hình mờ.</p>
+            </div>
+
+            <button id="btn-start-game" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-extrabold text-xl md:text-2xl px-10 py-4 rounded-full border-b-8 border-amber-700 hover:scale-105 active:scale-95 transition shadow-lg">BẮT ĐẦU HỌC NÀO 🚀</button>
+        </div>
+    </div>
+
+    <!-- THÔNG BÁO THÀNH CÔNG RỰC RỠ -->
+    <div id="victory-screen" class="hidden absolute inset-0 z-50 bg-black/70 backdrop-blur-md flex justify-center items-center p-4 animate-fade-in">
+        <div class="bg-white rounded-[3rem] p-8 max-w-md w-full border-8 border-yellow-400 text-center shadow-2xl relative">
+            <div class="text-7xl mb-4">🏆</div>
+            <h2 class="title-font text-3xl font-extrabold text-emerald-700 mb-1">Bé Thật Tuyệt Vời!</h2>
+            <p class="text-gray-600 font-bold text-sm mb-6">Bé đã xuất sắc đập trứng giải cứu chữ cái và hoàn thành trò chơi ghép bóng!</p>
+
+            <div class="flex flex-col gap-3">
+                <button id="btn-victory-next" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-lg py-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 hover:scale-[1.02] active:scale-95 transition">Học Chữ Cái Tiếp Theo ➡️</button>
+                <button id="btn-victory-replay" class="bg-slate-100 text-slate-700 font-bold text-sm py-2.5 rounded-xl hover:bg-slate-200 transition">Đập Lại Trang Này 🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT ĐIỀU KHIỂN -->
+    <script>
+        // --- 1. CẤU HÌNH DATABASE 12 CHỦ ĐIỂM ĐẦY ĐỦ ---
+        const THEMES_DATABASE = [
+            {
+                id: "ban_than",
+                name: "Bản Thân",
+                color: "#ff8a80",
+                bg3D: 0xffeeea,
+                letters: [
+                    {
+                        upper: "A", lower: "a", pronounce: "A",
+                        word: "Tai", desc: "Đôi tai xinh xắn của bé để lắng nghe lời cô giáo dạy bảo.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M50,15 C20,15 15,45 25,65 C35,85 55,90 60,80 C65,70 50,55 50,45" fill="none" stroke="#f48fb1" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="45" r="5" fill="#f48fb1"/></svg>`
+                    },
+                    {
+                        upper: "Ă", lower: "ă", pronounce: "Ă",
+                        word: "Mắt", desc: "Mắt bé sáng lấp lánh như hai vì sao nhỏ giúp bé ngắm nhìn mọi vật.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M15,50 Q50,20 85,50 Q50,80 15,50 Z" fill="#e0f7fa" stroke="#00acc1" stroke-width="4"/><circle cx="50" cy="50" r="15" fill="#00acc1"/><circle cx="50" cy="50" r="7" fill="#004d40"/><circle cx="55" cy="45" r="3" fill="#ffffff"/></svg>`
+                    },
+                    {
+                        upper: "Â", lower: "â", pronounce: "Â",
+                        word: "Chân", desc: "Bàn chân nhỏ nhắn dạo bước tung tăng chạy nhảy trên sân trường.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30,30 L30,65 Q30,85 55,85 Q75,85 75,70 Q75,60 65,60 L50,60 L50,30 Z" fill="#ffcc80" stroke="#f57c00" stroke-width="4"/><circle cx="75" cy="50" r="5" fill="#f57c00"/><circle cx="68" cy="45" r="4" fill="#f57c00"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "truong_mam_non",
+                name: "Trường Mầm Non",
+                color: "#80d8ff",
+                bg3D: 0xe1f5fe,
+                letters: [
+                    {
+                        upper: "O", lower: "o", pronounce: "O",
+                        word: "Học", desc: "Lớp học mầm non tràn ngập tiếng cười đùa và bao điều mới mẻ.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="15" y="25" width="70" height="55" rx="10" fill="#a1887f" stroke="#5d4037" stroke-width="4"/><rect x="22" y="32" width="56" height="40" fill="#2e7d32"/><circle cx="35" cy="45" r="3" fill="#ffffff"/><line x1="22" y1="65" x2="78" y2="65" stroke="#ffffff" stroke-width="2"/></svg>`
+                    },
+                    {
+                        upper: "Ô", lower: "ô", pronounce: "Ô",
+                        word: "Cô Giáo", desc: "Cô giáo mầm non dịu dàng hiền hậu thương yêu chăm sóc bé như mẹ hiền.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="35" r="18" fill="#ffcc80"/><path d="M30,80 C30,55 70,55 70,80 Z" fill="#9c27b0"/><path d="M40,35 C42,20 58,20 60,35" fill="none" stroke="#3e2723" stroke-width="5"/></svg>`
+                    },
+                    {
+                        upper: "Ơ", lower: "ơ", pronounce: "Ơ",
+                        word: "Cờ Đỏ", desc: "Lá cờ đỏ sao vàng năm cánh phấp phới tung bay tự hào quê hương.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><line x1="25" y1="15" x2="25" y2="90" stroke="#795548" stroke-width="4"/><rect x="27" y="15" width="50" height="35" fill="#d32f2f"/><polygon points="52,25 54,30 60,30 55,34 57,40 52,36 47,40 49,34 44,30 50,30" fill="#fbc02d"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "gia_dinh",
+                name: "Gia Đình",
+                color: "#ffcc80",
+                bg3D: 0xfff8e1,
+                letters: [
+                    {
+                        upper: "E", lower: "e", pronounce: "E",
+                        word: "Mẹ", desc: "Mẹ hiền tần tảo sớm hôm lo từng bữa ăn giấc ngủ ấm êm cho con.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="35" r="16" fill="#ffe082"/><path d="M25,85 C25,55 75,55 75,85 Z" fill="#e91e63"/><path d="M35,35 Q50,15 65,35" fill="none" stroke="#263238" stroke-width="4"/></svg>`
+                    },
+                    {
+                        upper: "Ê", lower: "ê", pronounce: "Ê",
+                        word: "Bếp lửa", desc: "Bếp lửa gia đình đỏ rực sưởi ấm tình thương lòng mẹ nấu cơm chiều.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M20,80 L80,80 L70,55 L30,55 Z" fill="#78909c"/><path d="M40,55 C40,40 50,25 50,25 C50,25 60,40 60,55 Z" fill="#ff9100"/><path d="M45,55 C45,45 50,35 50,35 C50,35 55,45 55,55 Z" fill="#ff3d00"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "nghe_nghiep",
+                name: "Nghề Nghiệp",
+                color: "#a7ffeb",
+                bg3D: 0xe0f2f1,
+                letters: [
+                    {
+                        upper: "U", lower: "u", pronounce: "U",
+                        word: "Mũ Thợ", desc: "Mũ bảo hộ bền bỉ đồng hành cùng chú công nhân xây dựng mọi công trình lớn.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M20,60 C20,30 80,30 80,60 Z" fill="#fbc02d" stroke="#f57f17" stroke-width="3"/><rect x="15" y="60" width="70" height="6" rx="3" fill="#f57f17"/></svg>`
+                    },
+                    {
+                        upper: "Ư", lower: "ư", pronounce: "Ư",
+                        word: "Thư Từ", desc: "Chú đưa thư vui tính gửi gắm những lời chúc, tình cảm chân thành muôn nơi.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="15" y="25" width="70" height="50" rx="6" fill="#cfd8dc" stroke="#37474f" stroke-width="3"/><path d="M15,25 L50,55 L85,25" fill="none" stroke="#37474f" stroke-width="3"/><circle cx="50" cy="55" r="5" fill="#ff1744"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "giao_thong",
+                name: "Giao Thông",
+                color: "#b9f6ca",
+                bg3D: 0xe8f5e9,
+                letters: [
+                    {
+                        upper: "H", lower: "h", pronounce: "H",
+                        word: "Tàu Hỏa", desc: "Toa tàu hỏa xập xình vang tiếng còi rộn rã đưa hành khách về quê đón Tết.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="15" y="30" width="70" height="40" rx="5" fill="#1565c0"/><rect x="25" y="38" width="15" height="15" fill="#e0f2f1"/><rect x="50" y="38" width="15" height="15" fill="#e0f2f1"/><circle cx="30" cy="78" r="8" fill="#37474f"/><circle cx="70" cy="78" r="8" fill="#37474f"/></svg>`
+                    },
+                    {
+                        upper: "L", lower: "l", pronounce: "L",
+                        word: "Xe Lu", desc: "Chiếc xe lu to khỏe làm phẳng mịn từng con đường làng rải nhựa thênh thang.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="35" y="35" width="45" height="35" fill="#ffb300"/><circle cx="30" cy="70" r="16" fill="#757575" stroke="#424242" stroke-width="4"/><circle cx="70" cy="70" r="12" fill="#757575"/><rect x="45" y="25" width="15" height="10" fill="#212121"/></svg>`
+                    },
+                    {
+                        upper: "K", lower: "k", pronounce: "K",
+                        word: "Kính bảo hộ", desc: "Kính bảo hiểm chống bụi bặm giúp mọi người an toàn khi tham gia giao thông.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="32" cy="50" r="18" fill="none" stroke="#e91e63" stroke-width="4"/><circle cx="68" cy="50" r="18" fill="none" stroke="#e91e63" stroke-width="4"/><line x1="50" y1="50" x2="50" y2="45" stroke="#e91e63" stroke-width="4"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "tet_mou_xuan",
+                name: "Tết Mùa Xuân",
+                color: "#ff8a80",
+                bg3D: 0xffebeb,
+                letters: [
+                    {
+                        upper: "M", lower: "m", pronounce: "M",
+                        word: "Hoa Mai", desc: "Sắc mai vàng óng ánh mang niềm hy vọng tươi vui đón mừng xuân sang.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><g transform="translate(50, 50)"><circle cx="0" cy="-20" r="15" fill="#ffeb3b"/><circle cx="-18" cy="-8" r="15" fill="#ffeb3b"/><circle cx="-12" cy="14" r="15" fill="#ffeb3b"/><circle cx="12" cy="14" r="15" fill="#ffeb3b"/><circle cx="18" cy="-8" r="15" fill="#ffeb3b"/><circle cx="0" cy="0" r="10" fill="#ff9800"/></g></svg>`
+                    },
+                    {
+                        upper: "N", lower: "n", pronounce: "N",
+                        word: "Bánh Chưng", desc: "Bánh chưng xanh dẻo quánh, vuông vắn thơm nồng đượm đà hồn quê Việt.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="20" y="20" width="60" height="60" rx="5" fill="#4caf50" stroke="#2e7d32" stroke-width="4"/><line x1="50" y1="20" x2="50" y2="80" stroke="#fff" stroke-dasharray="4,4" stroke-width="3"/><line x1="20" y1="50" x2="80" y2="50" stroke="#fff" stroke-dasharray="4,4" stroke-width="3"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "thuc_vat",
+                name: "Thực Vật",
+                color: "#ccff90",
+                bg3D: 0xf1f8e9,
+                letters: [
+                    {
+                        upper: "B", lower: "b", pronounce: "B",
+                        word: "Bắp Ngô", desc: "Bắp ngô vàng rực, hạt đều tăm tắp ngọt bùi luộc chín bốc khói nghi ngút.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M50,15 C35,40 35,70 50,85 C65,70 65,40 50,15 Z" fill="#ffeb3b" stroke="#fbc02d" stroke-width="3"/><path d="M25,85 C32,50 45,35 48,15 C52,40 40,70 25,85 Z" fill="#8bc34a" opacity="0.8"/></svg>`
+                    },
+                    {
+                        upper: "D", lower: "d", pronounce: "D",
+                        word: "Quả Dừa", desc: "Trái dừa mát lạnh chứa nước thanh khiết mang lại sự sảng khoái ngày hè nắng gắt.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="30" fill="#4caf50" stroke="#2e7d32" stroke-width="3"/><path d="M45,20 Q50,10 65,18" stroke="#33691e" stroke-width="4" fill="none"/></svg>`
+                    },
+                    {
+                        upper: "Đ", lower: "đ", pronounce: "Đ",
+                        word: "Đu Đủ", desc: "Đu đủ ngọt lịm mang màu vàng cam bắt mắt vô cùng tốt cho sức khỏe của bé.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M50,15 C25,30 25,75 50,85 C75,75 75,30 50,15 Z" fill="#ffb300"/><ellipse cx="50" cy="50" rx="10" ry="18" fill="#fb8c00"/><circle cx="50" cy="45" r="2" fill="#212121"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "nuoc",
+                name: "Nước",
+                color: "#80d8ff",
+                bg3D: 0xe0f7fa,
+                letters: [
+                    {
+                        upper: "P", lower: "p", pronounce: "P",
+                        word: "Phao Bơi", desc: "Chiếc phao bơi nâng đỡ bé dập dềnh thỏa thích đùa giỡn cùng làn nước mát xanh.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="35" fill="none" stroke="#ff5252" stroke-width="16"/><circle cx="50" cy="50" r="35" fill="none" stroke="#ffffff" stroke-dasharray="20,20" stroke-width="16"/></svg>`
+                    },
+                    {
+                        upper: "Q", lower: "q", pronounce: "Q",
+                        word: "Quạt Nước", desc: "Hệ thống guồng xoay tạo bọt oxy dồi dào cho tôm cá trong hồ tung tăng bơi lội.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="8" fill="#37474f"/><line x1="50" y1="15" x2="50" y2="85" stroke="#78909c" stroke-width="4"/><line x1="15" y1="50" x2="85" y2="50" stroke="#78909c" stroke-width="4"/><rect x="42" y="10" width="16" height="12" fill="#00e676"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "hien_tuong_tu_nhien",
+                name: "Hiện Tượng Tự Nhiên",
+                color: "#ea80fc",
+                bg3D: 0xf3e5f5,
+                letters: [
+                    {
+                        upper: "G", lower: "g", pronounce: "G",
+                        word: "Cơn Gió", desc: "Cơn gió thu nhè nhẹ mát rượi thổi qua kẽ lá mơn man đôi má bé xinh.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M15,30 C35,30 35,20 55,20 C75,20 85,35 70,35" fill="none" stroke="#81d4fa" stroke-width="5" stroke-linecap="round"/><path d="M20,55 C40,55 45,45 65,45 C80,45 90,60 75,60" fill="none" stroke="#81d4fa" stroke-width="5" stroke-linecap="round"/></svg>`
+                    },
+                    {
+                        upper: "Y", lower: "y", pronounce: "Y",
+                        word: "Mây", desc: "Mây trắng lững lờ trôi thong thả dạo chơi cuối chân trời yên bình.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30,65 C20,65 15,55 25,45 C25,35 40,30 50,40 C60,30 75,35 75,45 C85,45 85,65 70,65 Z" fill="#e0f7fa" stroke="#b2ebf2" stroke-width="3"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "dong_vat",
+                name: "Động Vật",
+                color: "#ffd180",
+                bg3D: 0xfff3e0,
+                letters: [
+                    {
+                        upper: "I", lower: "i", pronounce: "I",
+                        word: "Chim Bồ Câu", desc: "Chim bồ câu hiền hòa mang sứ điệp hòa bình bay vút giữa bầu trời rộng lớn.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M30,45 C15,40 10,25 35,30 C45,20 65,25 70,40 Q90,30 80,60" fill="none" stroke="#b0bec5" stroke-width="4" stroke-linecap="round"/></svg>`
+                    },
+                    {
+                        upper: "T", lower: "t", pronounce: "T",
+                        word: "Con Tôm", desc: "Chú tôm nhỏ cong mình bật nhảy búng tít trong làn nước trong veo.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M25,65 Q50,30 75,65" fill="none" stroke="#ff7043" stroke-width="6" stroke-linecap="round"/><circle cx="35" cy="50" r="3" fill="#212121"/></svg>`
+                    },
+                    {
+                        upper: "C", lower: "c", pronounce: "C",
+                        word: "Con Cá", desc: "Chú cá nhỏ bơi lội uyển chuyển, vây hồng rực rỡ lấp lánh dưới nắng xuân.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M20,50 Q50,20 80,50 Q50,80 20,50 Z" fill="#ff8a80" stroke="#e53935" stroke-width="3"/><polygon points="80,50 95,35 95,65" fill="#ff5252"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "que_huong",
+                name: "Quê Hương Đất Nước",
+                color: "#ff8a80",
+                bg3D: 0xe8f5e9,
+                letters: [
+                    {
+                        upper: "S", lower: "s", pronounce: "S",
+                        word: "Hoa Sen", desc: "Đóa hoa sen ngát hương thơm dịu dàng kiêu hãnh vươn cao nơi lòng hồ làng quê.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><g transform="translate(50, 50)"><ellipse cx="0" cy="15" rx="30" ry="10" fill="#2e7d32"/><path d="M0,-25 C-15,-10 -15,10 0,20 C15,10 15,-10 0,-25" fill="#f48fb1"/><circle cx="0" cy="-5" r="5" fill="#fdd835"/></g></svg>`
+                    },
+                    {
+                        upper: "X", lower: "x", pronounce: "X",
+                        word: "Xe Xích Lô", desc: "Xích lô cổ kính lọc cọc dạo chơi trên những nẻo phố xưa rêu phong.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="35" cy="70" r="14" fill="none" stroke="#424242" stroke-width="3"/><circle cx="75" cy="70" r="14" fill="none" stroke="#424242" stroke-width="3"/><path d="M25,45 L40,45 L38,65 L22,65 Z" fill="#ffb74d" stroke="#e65100" stroke-width="2"/></svg>`
+                    }
+                ]
+            },
+            {
+                id: "bac_ho",
+                name: "Bác Hồ",
+                color: "#ffe082",
+                bg3D: 0xfffbe6,
+                letters: [
+                    {
+                        upper: "V", lower: "v", pronounce: "V",
+                        word: "Vườn Bác", desc: "Vườn cây của Bác Hồ rộn rã tiếng chim ca vang trời lấp lánh hoa trái trĩu quả.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="42" y="55" width="16" height="30" fill="#8d6e63"/><path d="M30,55 C30,35 50,20 50,20 C50,20 70,35 70,55 Z" fill="#4caf50"/><circle cx="42" cy="40" r="4" fill="#ff1744"/><circle cx="58" cy="45" r="4" fill="#ff1744"/></svg>`
+                    },
+                    {
+                        upper: "R", lower: "r", pronounce: "R",
+                        word: "Rừng Tre", desc: "Hàng tre ngà ngát hương vàng ru hời bóng Bác thanh cao muôn thuở.",
+                        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><line x1="30" y1="90" x2="30" y2="20" stroke="#8bc34a" stroke-width="4"/><line x1="50" y1="90" x2="50" y2="10" stroke="#8bc34a" stroke-width="5"/><line x1="70" y1="90" x2="70" y2="25" stroke="#8bc34a" stroke-width="4"/></svg>`
+                    }
+                ]
+            }
+        ];
+
+        // --- 2. CẤU HÌNH BIẾN TOÀN CỤC TRÒ CHƠI ---
+        let currentThemeIndex = 0;
+        let currentLetterIndex = 0;
+        let currentLetterPair = THEMES_DATABASE[currentThemeIndex].letters[currentLetterIndex];
+        
+        let scene, camera, renderer, eggsGroup = [];
+        let particles = [];
+        let isMuted = false;
+        let dragSource = null;
+        let crackedCount = 0;
+        
+        // Trạng thái đập của 2 quả trứng hiện tại
+        let eggStates = {
+            upper: { isCracked: false, letter: "" },
+            lower: { isCracked: false, letter: "" }
+        };
+
+        const synth = window.speechSynthesis;
+
+        // --- 3. ĐIỀU KHIỂN ÂM THANH (SPEECH API) ---
+        function speak(text, rate = 0.85) {
+            if (isMuted || !synth) return;
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'vi-VN';
+            utter.rate = rate;
+            const voices = synth.getVoices();
+            const viVoice = voices.find(v => v.lang.includes('vi'));
+            if (viVoice) utter.voice = viVoice;
+            synth.speak(utter);
+        }
+
+        // --- 4. TẠO CẢNH TRÍ 3D SỐNG ĐỘNG (THREE.JS) ---
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = ''; // Reset canvas cũ
+
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            scene = new THREE.Scene();
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(0, 4.5, 11);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.localClippingEnabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Ánh sáng chan hòa ấm áp
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xfffaed, 1);
+            dirLight.position.set(5, 12, 6);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Cập nhật phông nền theo chủ điểm đang học
+            updateEnvironment3D();
+
+            window.addEventListener('resize', onResize);
+        }
+
+        function onResize() {
+            const container = document.getElementById('canvas-container');
+            if(!container) return;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        // Cập nhật chi tiết cảnh 3D dựa vào chủ điểm được chọn
+        function updateEnvironment3D() {
+            // Xóa bỏ tất cả mesh cũ ngoại trừ ánh sáng
+            const toRemove = [];
+            scene.children.forEach(child => {
+                if (child.isMesh || child.isGroup || child.isPoints) {
+                    toRemove.push(child);
+                }
+            });
+            toRemove.forEach(mesh => scene.remove(mesh));
+
+            const themeData = THEMES_DATABASE[currentThemeIndex];
+            
+            // Thiết lập màu sương mù dịu nhẹ phù hợp chủ điểm
+            scene.fog = new THREE.FogExp2(themeData.bg3D, 0.015);
+
+            // 1. Mặt bàn trưng bày trứng bằng tre nứa xinh đẹp
+            const tableGeo = new THREE.BoxGeometry(7, 0.4, 3);
+            const tableMat = new THREE.MeshStandardMaterial({ 
+                color: 0xe0a96d, 
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            const table = new THREE.Mesh(tableGeo, tableMat);
+            table.position.set(0, -1.2, 0);
+            table.receiveShadow = true;
+            scene.add(table);
+
+            const legGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.8);
+            const legPositions = [
+                [-3.2, -2.6, -1.2], [3.2, -2.6, -1.2],
+                [-3.2, -2.6, 1.2], [3.2, -2.6, 1.2]
+            ];
+            legPositions.forEach(pos => {
+                const leg = new THREE.Mesh(legGeo, tableMat);
+                leg.position.fromArray(pos);
+                scene.add(leg);
+            });
+
+            // 2. Các đồ vật trang trí động đậy dễ thương phía sau bàn
+            // Thêm nón lá rực rỡ
+            const hatGroup = new THREE.Group();
+            const hatCone = new THREE.Mesh(
+                new THREE.ConeGeometry(0.8, 0.6, 16, 1, true),
+                new THREE.MeshStandardMaterial({ color: 0xfff9c4, side: THREE.DoubleSide, roughness: 0.9 })
+            );
+            hatGroup.add(hatCone);
+            const ribbon = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2, 0.2, 0.05, 16),
+                new THREE.MeshStandardMaterial({ color: 0xf48fb1 })
+            );
+            ribbon.position.y = -0.1;
+            hatGroup.add(ribbon);
+            hatGroup.position.set(-2.8, -0.9, 0.8);
+            hatGroup.rotation.set(0.1, 0.4, -0.2);
+            scene.add(hatGroup);
+
+            // Hoa sen vàng tươi nở bên mặt hồ dưới gầm bàn
+            const lotusGeo = new THREE.ConeGeometry(0.25, 0.6, 5);
+            const lotusMat = new THREE.MeshStandardMaterial({ color: 0xff80ab, roughness: 0.5 });
+            const lotus = new THREE.Group();
+            for (let i = 0; i < 6; i++) {
+                const petal = new THREE.Mesh(lotusGeo, lotusMat);
+                petal.rotation.z = 0.5;
+                petal.rotation.y = (Math.PI / 3) * i;
+                lotus.add(petal);
+            }
+            lotus.position.set(2.8, -2.5, 0.8);
+            scene.add(lotus);
+
+            // 3. TẠO 2 QUẢ TRỨNG HOÀNG KIM (TRÁI: CHỮ HOA, PHẢI: CHỮ THƯỜNG)
+            eggsGroup = [];
+            
+            // Thiết lập trạng thái ban đầu của trứng
+            eggStates.upper.isCracked = false;
+            eggStates.upper.letter = currentLetterPair.upper;
+            eggStates.lower.isCracked = false;
+            eggStates.lower.letter = currentLetterPair.lower;
+            crackedCount = 0;
+            document.getElementById('cracked-count').innerText = "0/2";
+
+            const eggConfigs = [
+                { type: 'upper', letter: currentLetterPair.upper, x: -1.8, color: 0xffd54f }, // Trứng vàng lộng lẫy
+                { type: 'lower', letter: currentLetterPair.lower, x: 1.8, color: 0xffb74d }   // Trứng cam óng ánh
+            ];
+
+            eggConfigs.forEach(cfg => {
+                const eggContainer = new THREE.Group();
+                eggContainer.position.set(cfg.x, -1, 0);
+                eggContainer.userData = { type: cfg.type, letter: cfg.letter, isCracked: false };
+
+                // Tạo hình dáng vỏ trứng dẹt đều hoàn mỹ
+                const eggGeo = new THREE.SphereGeometry(0.7, 32, 32);
+                eggGeo.scale(1, 1.4, 1);
+
+                const eggMat = new THREE.MeshStandardMaterial({ 
+                    color: cfg.color, 
+                    roughness: 0.4,
+                    metalness: 0.2
+                });
+
+                // Cắt đôi trứng bằng clipping plane ảo diệu
+                const localClipTop = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+                const localClipBot = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+                const topEgg = new THREE.Mesh(eggGeo, new THREE.MeshStandardMaterial({
+                    color: cfg.color,
+                    roughness: 0.4,
+                    metalness: 0.2,
+                    clippingPlanes: [localClipTop],
+                    clipShadows: true,
+                    side: THREE.DoubleSide
+                }));
+                topEgg.name = "top";
+
+                const botEgg = new THREE.Mesh(eggGeo, new THREE.MeshStandardMaterial({
+                    color: cfg.color,
+                    roughness: 0.4,
+                    metalness: 0.2,
+                    clippingPlanes: [localClipBot],
+                    clipShadows: true,
+                    side: THREE.DoubleSide
+                }));
+                botEgg.name = "bottom";
+
+                eggContainer.add(topEgg);
+                eggContainer.add(botEgg);
+
+                // Đồng xu gỗ 3D mang chữ cái bay bổng phía trong
+                const coinGroup = new THREE.Group();
+                coinGroup.name = "coin";
+                coinGroup.visible = false; // Giấu trong lòng trứng
+
+                // 3a. Thân đồng tiền vàng tròn
+                const cylinderGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 24);
+                cylinderGeo.rotateX(Math.PI / 2);
+                const coinMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xffca28, 
+                    metalness: 0.8, 
+                    roughness: 0.2 
+                });
+                const coinBase = new THREE.Mesh(cylinderGeo, coinMat);
+                coinGroup.add(coinBase);
+
+                // 3b. Vẽ chữ sắc nét đưa lên mặt đồng tiền bằng CanvasTexture
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 80px Quicksand, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(cfg.letter, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const letterMesh = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.8, 0.8),
+                    new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
+                );
+                letterMesh.position.z = 0.07; // Nhô ra phía trước đồng xu một chút
+                coinGroup.add(letterMesh);
+
+                eggContainer.add(coinGroup);
+                scene.add(eggContainer);
+                eggsGroup.push(eggContainer);
+            });
+        }
+
+        // --- 5. HỆ THỐNG PHÓNG PHÁO HOA KHI ĐẬP TRỨNG (PARTICLES) ---
+        function spawnFireworks(position, color) {
+            const pCount = 40;
+            const geom = new THREE.BufferGeometry();
+            const pos = [];
+            const vels = [];
+
+            for (let i = 0; i < pCount; i++) {
+                pos.push(position.x, position.y + 0.3, position.z);
+                vels.push(
+                    (Math.random() - 0.5) * 0.18,
+                    (Math.random() * 0.16) + 0.05,
+                    (Math.random() - 0.5) * 0.18
+                );
+            }
+
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+
+            // Kết cấu lấp lánh tròn mịn
+            const pCanvas = document.createElement('canvas');
+            pCanvas.width = 16;
+            pCanvas.height = 16;
+            const pCtx = pCanvas.getContext('2d');
+            const grad = pCtx.createRadialGradient(8, 8, 0, 8, 8, 8);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            pCtx.fillStyle = grad;
+            pCtx.fillRect(0, 0, 16, 16);
+            
+            const pTexture = new THREE.CanvasTexture(pCanvas);
+            const pMat = new THREE.PointsMaterial({
+                color: color,
+                size: 0.45,
+                map: pTexture,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const points = new THREE.Points(geom, pMat);
+            scene.add(points);
+            particles.push({ points, velocities: vels, life: 1.0 });
+        }
+
+        // --- 6. VÒNG LẶP HOẠT HÌNH CẬP NHẬT 3D KHUNG HÌNH ---
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Rung rinh thu hút trẻ em đối với trứng chưa đập
+            eggsGroup.forEach(egg => {
+                const type = egg.userData.type;
+                const state = eggStates[type];
+
+                if (!state.isCracked) {
+                    egg.rotation.z = Math.sin(time * 4.5 + egg.position.x) * 0.06;
+                    egg.position.y = -1.0 + Math.sin(time * 2 + egg.position.x) * 0.03;
+                } else {
+                    // Nếu đã đập: Đẩy vỏ trứng bay ra rồi ẩn biến mất ("biến mất vỏ trứng")
+                    const top = egg.getObjectByName("top");
+                    const bot = egg.getObjectByName("bottom");
+                    const coin = egg.getObjectByName("coin");
+
+                    if (top && top.visible) {
+                        top.position.y += delta * 4;
+                        top.position.x -= delta * 1.5;
+                        top.rotation.z += delta * 3;
+                        top.scale.multiplyScalar(0.94);
+                        if (top.scale.x < 0.1) top.visible = false; // Biến mất vỏ hoàn toàn
+                    }
+                    if (bot && bot.visible) {
+                        bot.position.y -= delta * 3;
+                        bot.position.x += delta * 1.5;
+                        bot.rotation.x += delta * 3;
+                        bot.scale.multiplyScalar(0.94);
+                        if (bot.scale.x < 0.1) bot.visible = false;
+                    }
+                    if (coin) {
+                        coin.rotation.y += delta * 1.5;
+                        coin.position.y = 0.3 + Math.sin(time * 3) * 0.15;
+                    }
+                }
+            });
+
+            // Cập nhật pháo hoa lấp lánh rơi rụng bay bổng
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.life -= delta * 1.1;
+                if (p.life <= 0) {
+                    scene.remove(p.points);
+                    particles.splice(i, 1);
+                } else {
+                    const posAttr = p.points.geometry.attributes.position;
+                    for (let j = 0; j < posAttr.count; j++) {
+                        let x = posAttr.getX(j) + p.velocities[j * 3];
+                        let y = posAttr.getY(j) + p.velocities[j * 3 + 1];
+                        let z = posAttr.getZ(j) + p.velocities[j * 3 + 2];
+                        // Rơi do lực hút trái đất giả lập
+                        p.velocities[j * 3 + 1] -= delta * 0.5;
+                        posAttr.setXYZ(j, x, y, z);
+                    }
+                    posAttr.needsUpdate = true;
+                    p.points.material.opacity = p.life;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 7. HÀM XỬ LÝ ĐẬP TRỨNG KỲ DIỆU ---
+        function handleEggTapped(eggGroup) {
+            const type = eggGroup.userData.type;
+            const state = eggStates[type];
+
+            if (state.isCracked) {
+                // Đã vỡ rồi thì click lại mở trực tiếp bảng chi tiết chữ cái
+                openDetailModal(state.letter, type);
+                return;
+            }
+
+            // Gắn trạng thái đã đập vỡ
+            state.isCracked = true;
+            eggGroup.userData.isCracked = true;
+
+            // Bắn hạt pháo hoa chúc mừng đầy màu sắc tinh nghịch
+            spawnFireworks(eggGroup.position, type === 'upper' ? 0xffea00 : 0x00e676);
+
+            // Hiện đồng xu chữ cái lung linh
+            const coin = eggGroup.getObjectByName("coin");
+            if (coin) {
+                coin.visible = true;
+                coin.scale.set(0.1, 0.1, 0.1);
+                
+                // Hiệu ứng phình to nảy mượt mà
+                let s = 0.1;
+                const expandTimer = setInterval(() => {
+                    s += 0.15;
+                    if (s >= 1) {
+                        coin.scale.set(1, 1, 1);
+                        clearInterval(expandTimer);
+                    } else {
+                        coin.scale.set(s, s, s);
+                    }
+                }, 16);
+            }
+
+            // Đọc âm thanh chữ cái ngay lập tức
+            const soundChar = currentLetterPair.pronounce;
+            speak(`Chữ ${soundChar}`);
+
+            crackedCount++;
+            document.getElementById('cracked-count').innerText = `${crackedCount}/2`;
+            
+            // Cập nhật hướng dẫn mượt mà
+            if (crackedCount === 1) {
+                setGuideText("🌟 Tuyệt quá! Hãy đập nốt quả trứng còn lại nào bé ơi!");
+            } else {
+                setGuideText("🎉 Bé ơi! Giờ hãy kéo chữ cái xuống đúng ô bóng đen của nó nhé!");
+            }
+
+            // Tự động kích hoạt hiển thị modal chi tiết sau 800ms để bé quan sát
+            setTimeout(() => {
+                openDetailModal(state.letter, type);
+            }, 800);
+        }
+
+        function setGuideText(msg) {
+            document.getElementById('guide-text').innerText = msg;
+        }
+
+        // --- 8. QUẢN LÝ PANEL CHI TIẾT CHỮ CÁI TƯƠNG TÁC ---
+        function openDetailModal(letter, type) {
+            const isUpper = (letter === currentLetterPair.upper);
+            document.getElementById('detail-type-badge').innerText = isUpper ? "Chữ In Hoa" : "Chữ In Thường";
+            
+            const giantEl = document.getElementById('detail-giant-letter');
+            giantEl.innerText = letter;
+            giantEl.className = "text-[9rem] font-black my-2 transition-all duration-300 transform hover:scale-110 hover:rotate-6 select-none cursor-pointer leading-none text-sky-500";
+
+            // Hiển thị SVG vẽ tay tương ứng
+            document.getElementById('detail-svg-container').innerHTML = currentLetterPair.svg;
+
+            // Xây dựng cụm chữ cái đổi màu sắc sống động khi chỉ tay vào
+            const wordContainer = document.getElementById('detail-word-highlight');
+            wordContainer.innerHTML = '';
+
+            const wordStr = currentLetterPair.word;
+            for (let i = 0; i < wordStr.length; i++) {
+                const char = wordStr[i];
+                const span = document.createElement('span');
+                span.innerText = char;
+                span.className = "transition-all duration-300 inline-block";
+
+                // Đổi màu riêng chữ cái đang học trong từ ghép quê hương
+                if (char.toLowerCase() === currentLetterPair.lower.toLowerCase()) {
+                    span.className += " text-red-500 font-extrabold scale-110 px-0.5 cursor-pointer hover:scale-125 hover:text-indigo-600 hover:rotate-6";
+                    
+                    // Di chuột/Chạm đổi màu kỳ diệu
+                    span.addEventListener('pointerenter', () => {
+                        span.classList.remove('text-red-500');
+                        span.classList.add('text-indigo-600', 'scale-125');
+                        speak(char);
+                    });
+                    span.addEventListener('pointerleave', () => {
+                        span.classList.remove('text-indigo-600', 'scale-125');
+                        span.classList.add('text-red-500');
+                    });
+                } else {
+                    span.className += " text-slate-700";
+                }
+                wordContainer.appendChild(span);
+            }
+
+            document.getElementById('detail-word-desc').innerText = currentLetterPair.desc;
+
+            // Bật sự kiện chỉ tay vào chữ khổng lồ đổi màu ngẫu nhiên cực đẹp
+            giantEl.onpointerenter = () => {
+                const randomColors = ['text-red-500', 'text-amber-500', 'text-emerald-500', 'text-indigo-600', 'text-pink-500', 'text-purple-600'];
+                const choice = randomColors[Math.floor(Math.random() * randomColors.length)];
+                
+                randomColors.forEach(c => giantEl.classList.remove(c));
+                giantEl.classList.add(choice);
+                speak(letter);
+            };
+
+            // Mở Modal
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        // Đóng panel chi tiết
+        document.getElementById('btn-close-detail').addEventListener('click', () => {
+            document.getElementById('detail-modal').classList.add('hidden');
+        });
+
+        document.getElementById('btn-voice-letter').addEventListener('click', () => {
+            speak(`Chữ ${currentLetterPair.pronounce}`);
+        });
+
+        document.getElementById('btn-voice-word').addEventListener('click', () => {
+            speak(currentLetterPair.word);
+        });
+
+        // --- 9. HỆ THỐNG TRÒ CHƠI KÉO THẢ NỐI BÓNG ĐEN MƯỜ ---
+        let solvedStatus = { upper: false, lower: false };
+
+        function setupDragAndDrop() {
+            const dragItems = document.querySelectorAll('.drag-item');
+            const shadowTargets = document.querySelectorAll('.shadow-target');
+
+            // Cập nhật text cho giao diện Kéo thả bên dưới phù hợp trang hiện tại
+            const dragUpper = document.getElementById('drag-upper');
+            const dragLower = document.getElementById('drag-lower');
+            
+            dragUpper.innerText = currentLetterPair.upper;
+            dragUpper.style.display = 'flex';
+            dragLower.innerText = currentLetterPair.lower;
+            dragLower.style.display = 'flex';
+
+            const targetUpper = document.getElementById('target-upper');
+            const targetLower = document.getElementById('target-lower');
+
+            // Đặt lại nền mờ bóng xám
+            targetUpper.innerHTML = `<span class="opacity-15">${currentLetterPair.upper}</span>`;
+            targetUpper.className = "shadow-target w-14 h-14 md:w-16 md:h-16 bg-slate-300 text-slate-700 text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center border-4 border-dashed border-slate-400 relative";
+            
+            targetLower.innerHTML = `<span class="opacity-15">${currentLetterPair.lower}</span>`;
+            targetLower.className = "shadow-target w-14 h-14 md:w-16 md:h-16 bg-slate-300 text-slate-700 text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center border-4 border-dashed border-slate-400 relative";
+
+            solvedStatus.upper = false;
+            solvedStatus.lower = false;
+
+            // Xử lý sự kiện kéo trên desktop/mobile
+            dragItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    dragSource = e.target.id;
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                });
+            });
+
+            shadowTargets.forEach(target => {
+                target.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                target.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const sourceId = e.dataTransfer.getData('text/plain') || dragSource;
+                    handleMatching(sourceId, target.id);
+                });
+
+                // Chạm/Click trực tiếp đối với các em bé dùng màn hình cảm ứng điện thoại
+                target.addEventListener('click', () => {
+                    // Nếu bé đã click chọn một chữ cái kéo thả trước đó
+                    if (selectedDragItem) {
+                        handleMatching(selectedDragItem.id, target.id);
+                        selectedDragItem.classList.remove('ring-4', 'ring-amber-400');
+                        selectedDragItem = null;
+                    }
+                });
+            });
+
+            // Hỗ trợ click nối nhanh trên mobile
+            let selectedDragItem = null;
+            dragItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (selectedDragItem) {
+                        selectedDragItem.classList.remove('ring-4', 'ring-amber-400');
+                    }
+                    selectedDragItem = item;
+                    item.classList.add('ring-4', 'ring-amber-400');
+                });
+            });
+        }
+
+        // Xử lý khi nối đúng bóng đen chữ cái
+        function handleMatching(sourceId, targetId) {
+            const dragEl = document.getElementById(sourceId);
+            const targetEl = document.getElementById(targetId);
+
+            if (!dragEl || !targetEl) return;
+
+            const isUpperMatch = (sourceId === 'drag-upper' && targetId === 'target-upper');
+            const isLowerMatch = (sourceId === 'drag-lower' && targetId === 'target-lower');
+
+            if (isUpperMatch || isLowerMatch) {
+                // Khớp chính xác!
+                const isTypeUpper = isUpperMatch;
+                
+                // Đọc âm thanh chữ cái để cổ vũ
+                speak(`Chính xác! Chữ ${currentLetterPair.pronounce}`);
+
+                // Đổi giao diện bóng đen thành sáng bừng rực rỡ
+                targetEl.className = `w-14 h-14 md:w-16 md:h-16 text-white text-3xl md:text-4xl font-black rounded-2xl flex items-center justify-center shadow-lg border-b-4 relative transform scale-110 transition duration-300 ${isTypeUpper ? 'bg-gradient-to-br from-amber-400 to-orange-500 border-orange-700' : 'bg-gradient-to-br from-sky-400 to-blue-500 border-blue-700'}`;
+                targetEl.innerText = isTypeUpper ? currentLetterPair.upper : currentLetterPair.lower;
+
+                // Ẩn chữ cái kéo đi
+                dragEl.style.display = 'none';
+
+                if (isTypeUpper) solvedStatus.upper = true;
+                else solvedStatus.lower = true;
+
+                // Kiểm tra hoàn tất ghép đôi của màn này
+                if (solvedStatus.upper && solvedStatus.lower) {
+                    setTimeout(() => {
+                        document.getElementById('victory-screen').classList.remove('hidden');
+                        speak("Bé giỏi quá! Bé đã xuất sắc ghép đúng bóng chữ cái!");
+                    }, 800);
+                }
+            } else {
+                // Thất bại khi ghép sai lệch bóng chữ hoa - thường
+                speak("Bé thử lại nhé, bóng đen này của chữ cái khác rồi!");
+                // Rung nhẹ ô mục tiêu cảnh báo bé
+                targetEl.classList.add('animate-shake');
+                setTimeout(() => targetEl.classList.remove('animate-shake'), 400);
+            }
+        }
+
+        // --- 10. DỰNG PANEL BẢN ĐỒ 12 CHỦ ĐIỂM (GRID SELECTOR) ---
+        function renderMap() {
+            const mapGrid = document.querySelector('#map-modal grid');
+            // Dọn dẹp grid cũ nếu có
+            const gridContainer = document.querySelector('#map-modal .grid-cols-2');
+            gridContainer.innerHTML = '';
+
+            THEMES_DATABASE.forEach((theme, index) => {
+                const card = document.createElement('button');
+                card.className = "bg-white p-4 rounded-3xl border-4 hover:scale-105 active:scale-95 transition flex flex-col items-center justify-center text-center shadow-md relative overflow-hidden group";
+                card.style.borderColor = theme.color;
+
+                // Icon nhỏ biểu tượng
+                let themeIcon = "🌐";
+                if (theme.id === "ban_than") themeIcon = "👶";
+                else if (theme.id === "truong_mam_non") themeIcon = "🏫";
+                else if (theme.id === "gia_dinh") themeIcon = "🏠";
+                else if (theme.id === "nghe_nghiep") themeIcon = "🛠️";
+                else if (theme.id === "giao_thong") themeIcon = "🚗";
+                else if (theme.id === "tet_mou_xuan") themeIcon = "🌸";
+                else if (theme.id === "thuc_vat") themeIcon = "🌱";
+                else if (theme.id === "nuoc") themeIcon = "💧";
+                else if (theme.id === "hien_tuong_tu_nhien") themeIcon = "⚡";
+                else if (theme.id === "dong_vat") themeIcon = "🦁";
+                else if (theme.id === "que_huong") themeIcon = "🇻🇳";
+                else if (theme.id === "bac_ho") themeIcon = "❤️";
+
+                // Danh sách chữ cái đại diện của chủ điểm đó
+                const letterChain = theme.letters.map(l => `${l.upper}-${l.lower}`).join(', ');
+
+                card.innerHTML = `
+                    <div class="text-4xl mb-2 group-hover:scale-125 transition duration-300">${themeIcon}</div>
+                    <span class="text-xs font-black text-gray-500 uppercase tracking-wide">Chủ điểm</span>
+                    <h3 class="text-base font-extrabold text-slate-800 leading-tight mt-0.5">${theme.name}</h3>
+                    <p class="text-[11px] font-semibold text-emerald-600 mt-2 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">${letterChain}</p>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectTheme(index, 0);
+                    document.getElementById('map-modal').classList.add('hidden');
+                });
+
+                gridContainer.appendChild(card);
+            });
+        }
+
+        // Chọn chủ điểm & trang chữ mong muốn
+        function selectTheme(themeIdx, letterIdx) {
+            currentThemeIndex = themeIdx;
+            currentLetterIndex = letterIdx;
+            
+            const theme = THEMES_DATABASE[currentThemeIndex];
+            currentLetterPair = theme.letters[currentLetterIndex];
+
+            // Cập nhật giao diện tiêu đề
+            document.getElementById('current-theme-tag').innerText = `Chủ điểm: ${theme.name}`;
+            document.getElementById('current-stage-title').innerText = `Học Chữ Cái ${currentLetterPair.upper} - ${currentLetterPair.lower}`;
+
+            // Reset 3D
+            init3D();
+
+            // Setup trò chơi kéo thả bóng
+            setupDragAndDrop();
+
+            setGuideText(`Bé ơi, cùng khám phá chủ điểm ${theme.name} và đập trứng giải cứu chữ cái ${currentLetterPair.upper} thôi!`);
+        }
+
+        // Sự kiện phím và click nút đóng bản đồ
+        document.getElementById('btn-open-map').addEventListener('click', () => {
+            renderMap();
+            document.getElementById('map-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-close-map').addEventListener('click', () => {
+            document.getElementById('map-modal').classList.add('hidden');
+        });
+
+        // Nút tắt mở nhạc nền / âm thanh giọng nói
+        document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+            isMuted = !isMuted;
+            const icon = document.getElementById('sound-icon');
+            if (isMuted) {
+                icon.setAttribute('data-lucide', 'volume-x');
+                speak("Đã tắt tiếng");
+            } else {
+                icon.setAttribute('data-lucide', 'volume-2');
+                speak("Đã mở tiếng");
+            }
+            lucide.createIcons();
+        });
+
+        // Bắt đầu màn chơi từ màn hình chào mừng
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            // Đọc lời chào
+            speak("Chào mừng các bé học sinh yêu quý! Hãy cùng chọn một chủ điểm đập trứng kỳ thú nào!");
+            // Mở trực tiếp bản đồ cho bé chọn lúc đầu
+            renderMap();
+            document.getElementById('map-modal').classList.remove('hidden');
+        });
+
+        // Xử lý Click trên không gian 3D đập trứng (Raycasting)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('pointerdown', (event) => {
+            // Chỉ bắt click khi click ngoài các ô điều hướng UI HTML
+            if (
+                event.target.closest('button') || 
+                event.target.closest('#detail-modal') || 
+                event.target.closest('#map-modal') || 
+                event.target.closest('#victory-screen') || 
+                event.target.closest('#welcome-screen') ||
+                event.target.closest('footer')
+            ) {
+                return;
+            }
+
+            // Chuyển đổi tọa độ chuột sang chuẩn Three.js
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj.parent && obj.parent !== scene) {
+                    obj = obj.parent;
+                }
+
+                if (eggsGroup.includes(obj)) {
+                    const type = obj.userData.type;
+                    const state = eggStates[type];
+
+                    if (!state.isCracked) {
+                        // Hiệu ứng rung lắc quả trứng 3D chân thực rồi mở nứt
+                        let startTime = performance.now();
+                        const xOriginal = obj.position.x;
+                        
+                        function shake() {
+                            let elapsed = performance.now() - startTime;
+                            if (elapsed < 200) {
+                                obj.position.x = xOriginal + Math.sin(elapsed * 0.15) * 0.05;
+                                requestAnimationFrame(shake);
+                            } else {
+                                obj.position.x = xOriginal;
+                                handleEggTapped(obj);
+                            }
+                        }
+                        shake();
+                    } else {
+                        handleEggTapped(obj);
+                    }
+                }
+            }
+        });
+
+        // --- 11. XỬ LÝ ĐIỀU HƯỚNG MÀN CHIẾN THẮNG ---
+        document.getElementById('btn-victory-replay').addEventListener('click', () => {
+            document.getElementById('victory-screen').classList.add('hidden');
+            selectTheme(currentThemeIndex, currentLetterIndex);
+        });
+
+        document.getElementById('btn-victory-next').addEventListener('click', () => {
+            document.getElementById('victory-screen').classList.add('hidden');
+            
+            // Chuyển sang chữ cái tiếp theo trong danh sách hoặc chuyển chủ điểm
+            const currentTheme = THEMES_DATABASE[currentThemeIndex];
+            if (currentLetterIndex + 1 < currentTheme.letters.length) {
+                // Sang chữ cái tiếp theo cùng chủ điểm
+                selectTheme(currentThemeIndex, currentLetterIndex + 1);
+            } else {
+                // Chuyển tiếp sang chủ điểm kế tiếp
+                const nextThemeIndex = (currentThemeIndex + 1) % THEMES_DATABASE.length;
+                selectTheme(nextThemeIndex, 0);
+            }
+        });
+
+        // Khởi động khi tải xong trang
+        window.onload = () => {
+            lucide.createIcons();
+            selectTheme(0, 0);
+            animate();
+        };
+    </script>
+</body>
+</html>
